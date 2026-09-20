@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark to GitHub Pages
+name: Deploy Undead Afterdark
 
 on:
   push:
@@ -15,20 +15,49 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Rebuild and verify game
+        shell: bash
+        run: |
+          mkdir -p site
+          cat \
+            payload/chunk00.txt \
+            payload/chunk01.txt \
+            payload/chunk02.txt \
+            payload/chunk03.txt \
+            payload/chunk04a.txt \
+            payload/chunk04b.txt \
+            payload/chunk05.txt \
+            payload/chunk06a.txt \
+            payload/chunk06b.txt \
+            payload/chunk07.txt \
+            payload/chunk08.txt \
+            | tr -d '[:space:]' | base64 --decode > site/index.html
+          echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
+          touch site/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    needs: build
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: .
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
