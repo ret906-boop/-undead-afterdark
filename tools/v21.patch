@@ -1,0 +1,250 @@
+--- /mnt/data/undead_afterdark_v20_real_audio.html	2026-09-20 21:51:02.016843669 +0000
++++ /mnt/data/undead_afterdark_v21_front_audio.html	2026-09-20 21:53:12.531016919 +0000
+@@ -205,6 +205,59 @@
+     .knob{left:26px;top:26px}
+   }
+ 
++#startOverlay{
++  overflow:hidden;
++  background:
++    radial-gradient(circle at 72% 42%, rgba(130,24,18,.22), transparent 24%),
++    radial-gradient(circle at 22% 76%, rgba(92,111,83,.08), transparent 30%),
++    linear-gradient(115deg, rgba(4,6,7,.96), rgba(8,9,10,.91) 48%, rgba(12,7,7,.96));
++}
++#startOverlay:before{
++  content:'';position:absolute;inset:-20%;pointer-events:none;opacity:.42;
++  background:
++    repeating-linear-gradient(116deg, transparent 0 88px, rgba(255,255,255,.018) 90px 91px, transparent 93px 178px),
++    repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0 1px, transparent 1px 5px);
++  transform:rotate(-2deg);
++}
++#startOverlay:after{
++  content:'';position:absolute;left:0;right:0;bottom:0;height:8px;opacity:.8;
++  background:repeating-linear-gradient(135deg,#9d3a24 0 18px,#171313 18px 36px);
++  box-shadow:0 -18px 50px rgba(123,31,23,.2);
++}
++#startOverlay .hero{
++  position:relative;z-index:1;width:min(1080px,96vw);padding:0;overflow:hidden;
++  background:linear-gradient(180deg,rgba(18,20,21,.95),rgba(9,10,11,.97));
++  border:1px solid rgba(239,125,80,.20);border-radius:22px;
++  box-shadow:0 34px 110px rgba(0,0,0,.72), inset 0 0 0 1px rgba(255,255,255,.025);
++}
++.menuHazard{height:8px;background:repeating-linear-gradient(135deg,#a84226 0 20px,#171313 20px 40px);opacity:.88}
++.menuInner{padding:26px 28px 24px;display:grid;gap:20px}
++.menuEyebrow{display:flex;align-items:center;gap:10px;color:#d78d6a;font-size:11px;font-weight:900;letter-spacing:.22em;text-transform:uppercase}
++.menuEyebrow:before{content:'';width:34px;height:2px;background:#a84226;box-shadow:0 0 12px rgba(205,77,44,.5)}
++.menuTitle{margin:0!important;font-size:clamp(48px,8vw,92px)!important;line-height:.82;letter-spacing:-.035em!important;text-transform:uppercase;color:#f0e5d9;text-shadow:0 10px 28px rgba(0,0,0,.55)}
++.menuTitle span{display:block;color:#b4432a;letter-spacing:.015em}
++.menuTag{max-width:760px;color:#bdb2a7;font-size:15px;line-height:1.5;margin:14px 0 0}
++.menuRule{height:1px;background:linear-gradient(90deg,rgba(190,73,42,.65),rgba(255,255,255,.06),transparent)}
++.menuStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
++.menuStat{padding:12px 13px;border-radius:12px;background:linear-gradient(180deg,rgba(50,36,30,.55),rgba(22,20,19,.55));border:1px solid rgba(255,255,255,.065)}
++.menuStat b{display:block;font-size:20px;color:#f2e4d5;line-height:1;margin-bottom:5px}.menuStat span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#a99a8c;font-weight:800}
++.menuContent{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
++.menuCard{background:linear-gradient(180deg,rgba(25,28,29,.82),rgba(14,15,16,.88));border:1px solid rgba(255,255,255,.065);border-radius:16px;padding:15px 16px}
++.menuCardTitle{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#c87551;font-weight:900;margin-bottom:10px}
++.menuControlRow{display:grid;grid-template-columns:auto 1fr;gap:9px 12px;align-items:start;font-size:12px;line-height:1.38;color:#a99f96}
++.menuKey{min-width:62px;text-align:center;padding:6px 8px;border-radius:8px;background:#242729;border:1px solid rgba(255,255,255,.07);color:#e3d7ca;font:900 10px system-ui;letter-spacing:.04em}
++.menuThreat{display:flex;gap:11px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.045);color:#a99f96;font-size:12px}.menuThreat:last-child{border-bottom:0}
++.threatDot{width:9px;height:9px;border-radius:50%;background:#9d3a28;box-shadow:0 0 12px rgba(185,55,39,.55);flex:0 0 auto}
++.menuActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
++#startOverlay .startBtn{min-height:54px;padding:14px 22px;border-radius:12px;text-transform:uppercase;letter-spacing:.055em;background:linear-gradient(180deg,#b24b2c,#7c2c1a);box-shadow:0 10px 28px rgba(92,27,16,.35),inset 0 0 0 1px rgba(255,255,255,.08);transition:transform .12s ease,filter .12s ease}
++#startOverlay .startBtn:hover{transform:translateY(-1px);filter:brightness(1.08)}
++#startOverlay #continueBtn{background:linear-gradient(180deg,#3e6650,#294638)!important}
++.menuVersion{margin-left:auto;font-size:10px;color:#81786f;letter-spacing:.08em;text-transform:uppercase}
++#startOverlay .smallText{padding-top:12px;border-top:1px solid rgba(255,255,255,.05);color:#7f7770;font-size:10px}
++@media(max-width:760px){
++  #startOverlay{padding:9px}.menuInner{padding:18px 17px 16px;gap:14px}.menuTitle{font-size:clamp(42px,15vw,65px)!important}.menuTag{font-size:12px;margin-top:10px}.menuStats{grid-template-columns:repeat(2,1fr)}.menuContent{grid-template-columns:1fr}.menuCard{padding:12px}.menuVersion{width:100%;margin-left:0}.menuActions .startBtn{flex:1;min-width:145px;font-size:14px}.menuThreat:nth-child(n+3){display:none}
++}
++
+ #soundBtn{position:absolute;right:max(12px,calc(env(safe-area-inset-right) + 8px));top:max(76px,calc(env(safe-area-inset-top) + 70px));z-index:9;
+   border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:8px 11px;background:rgba(10,14,16,.76);color:#dfe6e4;
+   font:900 10px/1 system-ui;letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+@@ -269,17 +322,44 @@
+ 
+   <div id="startOverlay" class="overlay">
+     <div class="panel hero">
+-      <div>
+-        <h1>UNDEAD AFTERDARK</h1>
+-        <div class="sub">Survive a living infected world. Build your loadout. Face a Warden every 10 waves.</div>
+-        <p><b>Desktop:</b> WASD to move, Shift to sprint, mouse to aim/fire. Auto-fire only kicks in when an infected gets dangerously close.</p>
+-        <p><b>Mobile:</b> Left half moves. Right half manually aims; push farther to fire. Sprint button boosts movement. Auto-fire only steps in when an infected is close to hitting you and you are not manually aiming.</p>
+-      </div>
+-      <div class="row" style="margin-top:8px">
+-        <button class="startBtn" id="continueBtn" style="display:none;background:#355d43">CONTINUE SAVED RUN</button>
+-        <button class="startBtn" id="startBtn">START NEW RUN</button>
++      <div class="menuHazard"></div>
++      <div class="menuInner">
++        <div>
++          <div class="menuEyebrow">Survival Protocol // Nightfall</div>
++          <h1 class="menuTitle">UNDEAD<span>AFTERDARK</span></h1>
++          <p class="menuTag">The lights are gone. The infected are not. Survive escalating waves, scavenge weapons, cross five ruined biomes, and prepare for a Warden every tenth wave.</p>
++        </div>
++        <div class="menuRule"></div>
++        <div class="menuStats">
++          <div class="menuStat"><b>∞</b><span>Escalating Waves</span></div>
++          <div class="menuStat"><b>5</b><span>World Biomes</span></div>
++          <div class="menuStat"><b>30+</b><span>Infected Voices</span></div>
++          <div class="menuStat"><b>10</b><span>Warden Interval</span></div>
++        </div>
++        <div class="menuContent">
++          <div class="menuCard">
++            <div class="menuCardTitle">Field Controls</div>
++            <div class="menuControlRow">
++              <div class="menuKey">WASD</div><div>Move through the world. <b>Shift</b> burns stamina to sprint.</div>
++              <div class="menuKey">MOUSE</div><div>Aim and fire manually. Emergency auto-fire only reacts when infected are nearly on top of you.</div>
++              <div class="menuKey">MOBILE</div><div>Left side moves. Right side aims; push farther to fire. Sprint has its own button.</div>
++            </div>
++          </div>
++          <div class="menuCard">
++            <div class="menuCardTitle">Threat Brief</div>
++            <div class="menuThreat"><i class="threatDot"></i><div>Walkers crowd and pressure routes.</div></div>
++            <div class="menuThreat"><i class="threatDot"></i><div>Runners close distance fast.</div></div>
++            <div class="menuThreat"><i class="threatDot"></i><div>Brutes absorb punishment.</div></div>
++            <div class="menuThreat"><i class="threatDot"></i><div>Wardens arrive every 10 waves.</div></div>
++          </div>
++        </div>
++        <div class="menuActions">
++          <button class="startBtn" id="continueBtn" style="display:none">CONTINUE RUN</button>
++          <button class="startBtn" id="startBtn">START NEW RUN</button>
++          <div class="menuVersion">V21 // Expanded infected audio</div>
++        </div>
++        <div class="smallText" id="saveInfo">V21: 30+ randomized infected vocal variants, recorded gun audio, routed infected, sprint controls, apocalypse trader. Saves stay on this browser/device.</div>
+       </div>
+-      <div class="smallText" id="saveInfo">V19: full procedural sound pass, art update, routed infected, sprint controls. Saves stay on this browser/device.</div>
+     </div>
+   </div>
+ 
+@@ -408,9 +488,32 @@
+       'https://opengameart.org/sites/default/files/01_zombey.mp3',
+       'https://opengameart.org/sites/default/files/02_zombey.mp3',
+       'https://opengameart.org/sites/default/files/03_zombey.mp3',
+-      'https://opengameart.org/sites/default/files/04_zombey_0.mp3'
++      'https://opengameart.org/sites/default/files/04_zombey_0.mp3',
++      'https://opengameart.org/sites/default/files/06_zombey.mp3',
++      'https://opengameart.org/sites/default/files/07_zombey.mp3',
++      'https://opengameart.org/sites/default/files/darsycho__zombie-moans.ogg',
++      'https://opengameart.org/sites/default/files/silent_beast_growl.mp3',
++      'https://opengameart.org/sites/default/files/silent_beast_growl_1.mp3',
++      'https://opengameart.org/sites/default/files/silent_beast_growl_2.mp3',
++      'https://opengameart.org/sites/default/files/silent_beast_growl_3.mp3',
++      'https://opengameart.org/sites/default/files/Ghostmonster%20sounds.mp3',
++      'https://opengameart.org/sites/default/files/enemy_sounds.ogg',
++      'https://opengameart.org/sites/default/files/radio_death.mp3'
+     ]
+   };
++  // Thirty deliberately different infected vocal profiles. Several recordings are reused with
++  // different timing/pitch envelopes so the game gets variety without loading thirty huge files.
++  const ZOMBIE_VOICE_VARIANTS=[
++    ['idle',0,.88,1.02,.20,1.55,0],['idle',1,.82,.97,.22,1.75,0],['idle',2,.94,1.10,.20,1.35,0],['idle',3,.72,.88,.24,1.65,0],
++    ['idle',4,.64,.78,.27,2.10,0],['idle',5,1.02,1.18,.19,1.25,0],['idle',6,.86,1.02,.20,1.80,0],['idle',11,.78,.94,.19,1.65,0],
++    ['hunt',7,.72,.86,.25,1.30,0],['hunt',8,.82,.96,.23,1.15,0],['hunt',9,.66,.80,.27,1.45,0],['hunt',10,.90,1.05,.22,1.10,0],
++    ['hunt',12,.82,.98,.21,1.20,.15],['hunt',6,.68,.82,.25,1.35,.35],
++    ['alert',0,1.08,1.24,.28,.90,0],['alert',2,1.15,1.32,.25,.80,0],['alert',5,1.18,1.38,.24,.72,0],['alert',7,.92,1.08,.30,.95,0],
++    ['attack',1,1.08,1.28,.34,.68,0],['attack',3,1.16,1.36,.32,.62,0],['attack',8,.92,1.12,.36,.72,0],['attack',12,1.02,1.20,.30,.66,.45],
++    ['hurt',0,1.18,1.40,.22,.48,.10],['hurt',4,1.05,1.25,.24,.55,.25],['hurt',9,.96,1.14,.26,.58,.20],
++    ['death',2,.72,.90,.34,1.05,0],['death',5,.62,.78,.38,1.25,0],['death',10,.62,.82,.40,1.30,0],['death',13,.78,.96,.38,1.10,0],['death',6,.58,.74,.42,1.45,.55]
++  ];
++  let lastZombieVariant=-1;
+   const realAudioPools=new Map(), realAudioIndex=new Map();
+   function buildAudioPool(url,size=6){
+     if(realAudioPools.has(url))return realAudioPools.get(url);
+@@ -489,11 +592,34 @@
+   function sfxReloadStart(){tone(680,.035,.045,'square',.75);tone(390,.045,.035,'triangle',.75,.055)}
+   function sfxReloadEnd(){tone(420,.035,.04,'square',1.18);tone(720,.025,.035,'triangle',.9,.045)}
+   function sfxHit(){noiseBurst(.045,.035,700,'bandpass');tone(115,.035,.025,'sine',.72)}
++  function pickZombieVariant(event,z){
++    let candidates=[];
++    for(let i=0;i<ZOMBIE_VOICE_VARIANTS.length;i++){
++      const v=ZOMBIE_VOICE_VARIANTS[i];
++      if(v[0]===event) candidates.push(i);
++    }
++    if(!candidates.length) return null;
++    let idx=candidates[Math.floor(Math.random()*candidates.length)];
++    if(candidates.length>1&&idx===lastZombieVariant) idx=candidates[(candidates.indexOf(idx)+1+Math.floor(Math.random()*(candidates.length-1)))%candidates.length];
++    lastZombieVariant=idx;
++    const v=ZOMBIE_VOICE_VARIANTS[idx];
++    const type=z&&z.kind;
++    let typePitch=z&&z.boss?.66:(type==='brute'?.78:(type==='runner'?1.14:(type==='crawler'?1.08:1)));
++    const rate=(v[2]+Math.random()*(v[3]-v[2]))*typePitch;
++    let volume=v[4]*(z&&z.boss?1.55:(type==='brute'?1.25:1));
++    return {url:REAL_AUDIO_URLS.zombies[v[1]],rate,volume:Math.min(.55,volume),seconds:v[5],offset:v[6]||0,index:idx};
++  }
++  function sfxZombieEvent(z,event='idle'){
++    if(!soundEnabled)return;
++    const p=pickZombieVariant(event,z);if(!p)return;
++    playRealAudio(p.url,p.volume,p.rate,p.seconds,p.offset,()=>{
++      const base=z&&z.boss?48:(z&&z.kind==='brute'?62:(z&&z.kind==='runner'?124:82));
++      noiseBurst(event==='death'?.13:.08,event==='death'?.05:.022,420,'lowpass',0,ambienceGain);
++      tone(base,event==='death'?.24:.17,event==='death'?.04:.018,'sawtooth',.72,0,ambienceGain);
++    });
++  }
+   function sfxKill(z){
+-    const pool=REAL_AUDIO_URLS.zombies;
+-    const url=pool[Math.floor(Math.random()*pool.length)];
+-    const rate=z&&z.boss?.72:(z&&z.kind==='brute'?.82:(z&&z.kind==='runner'?1.16:(.92+Math.random()*.14)));
+-    playRealAudio(url,z&&z.boss?.46:.26,rate,z&&z.boss?1.8:1.05,0,null);
++    sfxZombieEvent(z,'death');
+     noiseBurst(z&&z.boss?.16:(z&&z.kind==='brute'?.11:.065),z&&z.boss?.08:.035,z&&z.boss?300:450,'lowpass');
+   }
+   function sfxHurt(){noiseBurst(.10,.095,430,'lowpass');tone(76,.15,.075,'sawtooth',.7)}
+@@ -508,14 +634,9 @@
+   function sfxGameOver(){tone(150,.22,.08,'sawtooth',.65);tone(88,.45,.07,'sine',.45,.17)}
+   function sfxGrowl(z){
+     if(!soundEnabled)return;
+-    const pool=REAL_AUDIO_URLS.zombies;
+-    const url=pool[Math.floor(Math.random()*pool.length)];
+-    let rate=z&&z.kind==='runner'?1.14:(z&&z.kind==='brute'?.78:(z&&z.boss?.67:(.90+Math.random()*.18)));
+-    let vol=z&&z.boss?.42:(z&&z.kind==='brute'?.32:.24);
+-    playRealAudio(url,vol,rate,z&&z.boss?2.4:1.65,0,()=>{
+-      const base=z&&z.kind==='runner'?125:(z&&z.kind==='brute'?62:(z&&z.boss?48:82));
+-      noiseBurst(.22,z&&z.boss?.05:.022,430,'lowpass',0,ambienceGain);tone(base,.26,z&&z.boss?.04:.018,'sawtooth',.72,0,ambienceGain);
+-    });
++    const roll=Math.random();
++    const event=roll<.52?'idle':(roll<.78?'hunt':(roll<.93?'alert':'attack'));
++    sfxZombieEvent(z,event);
+   }
+   function sfxStep(sprinting=false){noiseBurst(.035,sprinting?.026:.015,sprinting?260:210,'lowpass');tone(sprinting?72:60,.03,sprinting?.014:.008,'sine',.7)}
+   function refreshSoundButton(){if(!ui.soundBtn)return;ui.soundBtn.textContent=soundEnabled?'SOUND ON':'SOUND OFF';ui.soundBtn.classList.toggle('off',!soundEnabled)}
+@@ -1345,9 +1466,14 @@
+     if(rawMove>.18&&footstepTimer<=0){sfxStep(sprintWanted);footstepTimer=sprintWanted?.19:.32}
+     ambientSfxTimer-=dt;
+     if(ambientSfxTimer<=0&&state.zombies.length){
+-      let nearest=null,bd=Infinity;for(const z of state.zombies){const dd=(z.x-player.x)**2+(z.y-player.y)**2;if(dd<bd){bd=dd;nearest=z}}
+-      if(nearest&&bd<650*650)sfxGrowl(nearest);
+-      ambientSfxTimer=2.2+Math.random()*3.2;
++      const audible=[];
++      for(const z of state.zombies){const dd=(z.x-player.x)**2+(z.y-player.y)**2;if(dd<720*720)audible.push({z,dd})}
++      if(audible.length&&Math.random()<.88){
++        audible.sort((a,b)=>a.dd-b.dd);
++        const pick=audible[Math.min(audible.length-1,Math.floor(Math.pow(Math.random(),1.8)*Math.min(7,audible.length)))].z;
++        sfxGrowl(pick);
++      }
++      ambientSfxTimer=1.45+Math.random()*5.1;
+     }
+ 
+     let manualShot=false;
+@@ -1388,6 +1514,7 @@
+ 
+     for(const z of state.zombies){
+       z.hitCd=Math.max(0,z.hitCd-dt);
++      z.voiceCd=Math.max(0,(z.voiceCd||0)-dt);
+       z.hitFlash=Math.max(0,(z.hitFlash||0)-dt);
+       z.attackAnim=Math.max(0,(z.attackAnim||0)-dt);
+       const pursuitSpeed=z.speed*(z.catchup||1);
+@@ -1404,6 +1531,7 @@
+       if(touchDist<z.r+player.r+2 && z.hitCd<=0 && player.invuln<=0){
+         z.hitCd=.7;
+         z.attackAnim=.23;
++        if((z.voiceCd||0)<=0&&Math.random()<.72){sfxZombieEvent(z,'attack');z.voiceCd=.9+Math.random()*1.2}
+         let dmg=z.damage;
+         if(player.armor>0){
+           const a=Math.min(player.armor,dmg);
+@@ -1422,6 +1550,7 @@
+         const dx=b.x-z.x,dy=b.y-z.y;
+         if(dx*dx+dy*dy<(b.r+z.r)*(b.r+z.r)){
+           z.hp-=b.damage;sfxHit();
++          if(z.hp>0&&(z.voiceCd||0)<=0&&Math.random()<.20){sfxZombieEvent(z,'hurt');z.voiceCd=.7+Math.random()*.9}
+           z.hitFlash=.09;
+           state.hitMarker=.09;
+           {const bl=Math.hypot(b.vx,b.vy)||1;bloodBurst(b.x,b.y,z.kind==='brute'?6:4,85,b.vx/bl,b.vy/bl);}
