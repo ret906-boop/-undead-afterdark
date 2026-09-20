@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark
+name: Verify Game Transfer
 
 on:
   push:
@@ -7,62 +7,15 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Verify payload pieces
+      - uses: actions/checkout@v4
+      - name: Verify compressed transfer chunk
         shell: bash
         run: |
-          check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
-          check payload/chunk00a.txt 6d53f22f0075b3ccf04f07719f40e5a56eef3246dcd80d751f8c7ca56fa9a70e
-          check payload/chunk00b.txt 16185a47fd64ec549ab757148fb8862891134d7eca039e6cbab7d7a53465c44b
-          check payload/chunk01.txt 3b2e3a1b77b4472024301ff09511281746ffb099d15b2d1d35d7e4e63278420f
-          check payload/chunk02.txt 562f9b425d5c81ca5aa452a95873ba5623e4f7c5e624cfec7f38226cd6d4f027
-          check payload/chunk03.txt 061cd2faaa4dc98446bcb14e4fc83805e19a09e63e62104609e966141b69474f
-          check payload/chunk04a.txt 7216d51bc740da5e599197d7bc5611fda805af053431d86860df981e29157d3c
-          check payload/chunk04b.txt bfea061c0dffbbca8ec75478c3c0b11230e69dac5c2199f3bc003379718edd7b
-          check payload/chunk05.txt df415669d069310972cff9c28df66dd9e1b08a0bbecd1e0f5938ee2766e1ddce
-          check payload/chunk06a.txt 72558ce4fc387c0a16ec3997de81b5e5ac2020efd4166618fe401b1e88c74c5a
-          check payload/chunk06b.txt f270b52853ad22bad8ed18b90aa3e400c47829449ac6599a759b79770cd295f7
-          check payload/chunk07.txt 956a597fabf0692a841b5e8d92aa7426704fa9a66aabd96dba7225a0aac4820e
-          check payload/chunk08.txt 786ad9175440fd0e24e289ecb30b7361316d5d696a9a9dffa6ffc13fc97b888a
-
-      - name: Rebuild and verify game
-        shell: bash
-        run: |
-          mkdir -p site
-          cat payload/chunk00a.txt payload/chunk00b.txt payload/chunk01.txt payload/chunk02.txt payload/chunk03.txt payload/chunk04a.txt payload/chunk04b.txt payload/chunk05.txt payload/chunk06a.txt payload/chunk06b.txt payload/chunk07.txt payload/chunk08.txt | tr -d '[:space:]' | base64 --decode > site/index.html
-          echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
-          touch site/.nojekyll
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          got=$(tr -d '[:space:]' < payload/gz/g00.txt | sha256sum | cut -d' ' -f1)
+          echo "g00 $got"
+          test "$got" = "c3534cbde760602aa92d3a9d0a651627e4dd389a41a9b006129cbd14afbe7aea"
