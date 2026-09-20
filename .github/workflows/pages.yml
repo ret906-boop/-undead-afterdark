@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p site
-          cat payload/v10/k*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          cat payload/v10/k00.txt payload/v10/k01a.txt payload/v10/k01b.txt payload/v10/k02.txt payload/v10/k03.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
           echo '209e48445d4abe5888aa903c18130662c0b0e421e50fd70be35c0c4b3a6e458d  site/index.html' | sha256sum -c -
