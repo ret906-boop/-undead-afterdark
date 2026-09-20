@@ -1,0 +1,245 @@
+--- /mnt/data/undead_afterdark_v14_humanoid_zombies.html	2026-09-20 04:57:19.935808169 +0000
++++ /mnt/data/undead_afterdark_v15_apoc_shop.html	2026-09-20 05:09:01.657728137 +0000
+@@ -119,7 +119,58 @@
+     background:#27323c;color:white;cursor:pointer;
+   }
+   .buy.afford{background:#8f2d2d}
+-  .buy:disabled{opacity:.45;cursor:not-allowed}
++    .buy:disabled{opacity:.45;cursor:not-allowed}
++  .shopPanel{width:min(1120px,97vw);background:
++      radial-gradient(circle at top, rgba(153,60,31,.20), transparent 32%),
++      linear-gradient(180deg, #161310, #0c0a09 68%, #090808);
++    border:1px solid rgba(215,123,66,.22); box-shadow:0 22px 80px rgba(0,0,0,.68), inset 0 0 0 1px rgba(255,255,255,.03)}
++  .shopPanel:before{content:'';display:block;height:6px;border-radius:999px;background:linear-gradient(90deg, #6a2315, #b55528, #6a2315);opacity:.85;margin-bottom:16px}
++  .shopHeaderTitle{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#d89466;font-weight:900;margin-bottom:6px}
++  .shopTitle{font-size:34px;font-weight:900;letter-spacing:.03em;margin:0 0 6px;color:#f2e2d2}
++  .shopSub{margin:0;color:#b3a89e;max-width:720px;line-height:1.45}
++  .shopCashWrap{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
++  .scrapLabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#c58d64;font-weight:800}
++  .cashApoc{font-size:34px;font-weight:900;color:#ffcf8e;text-shadow:0 0 18px rgba(255,164,80,.16)}
++  .shopStats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:18px}
++  .shopStat{background:linear-gradient(180deg, rgba(44,31,24,.86), rgba(22,16,13,.92));border:1px solid rgba(214,126,67,.18);border-radius:14px;padding:12px 13px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.025)}
++  .shopStatLabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#b88f72;font-weight:800;margin-bottom:6px}
++  .shopStatValue{font-size:19px;font-weight:900;color:#f0e2d3}
++  .shopSections{display:grid;gap:18px;margin-top:18px}
++  .shopSection{background:linear-gradient(180deg, rgba(32,24,20,.9), rgba(18,14,12,.95));border:1px solid rgba(206,118,57,.16);border-radius:18px;padding:16px 16px 14px}
++  .shopSectionHead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:10px;flex-wrap:wrap}
++  .shopSectionTitle{font-size:18px;font-weight:900;letter-spacing:.03em;color:#f1dcc9;margin:0}
++  .shopSectionNote{font-size:12px;color:#9d9084}
++  .shopCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
++  .shopCard{background:
++      radial-gradient(circle at top right, rgba(179,89,37,.16), transparent 34%),
++      linear-gradient(180deg, #231a16, #17110e 74%);
++    border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px; min-height:190px;
++    display:flex; flex-direction:column; gap:10px; justify-content:space-between; position:relative; overflow:hidden;
++    box-shadow:inset 0 0 0 1px rgba(255,255,255,.02), 0 10px 22px rgba(0,0,0,.18)}
++  .shopCard:after{content:'';position:absolute;inset:auto -25% 8px auto;width:110px;height:110px;background:radial-gradient(circle, rgba(255,255,255,.05), transparent 70%);transform:rotate(18deg)}
++  .shopCardTop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
++  .itemMeta{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#bd8d6b;font-weight:800;margin-bottom:8px}
++  .shopCard h3{margin:0;color:#f6e7d6;font-size:18px;line-height:1.05}
++  .shopCard p{margin:0;color:#b4a69a;font-size:13px;line-height:1.38}
++  .badge{font-size:10px;letter-spacing:.13em;text-transform:uppercase;font-weight:900;border-radius:999px;padding:5px 8px;border:1px solid rgba(255,255,255,.1);white-space:nowrap}
++  .badge.owned{background:rgba(73,109,87,.24);color:#9fdbac;border-color:rgba(120,202,136,.18)}
++  .badge.equipped{background:rgba(176,91,45,.26);color:#ffc48f;border-color:rgba(255,183,128,.2)}
++  .badge.utility{background:rgba(73,76,84,.26);color:#cfd5df;border-color:rgba(170,178,190,.18)}
++  .costRow{display:flex;justify-content:space-between;align-items:center;gap:10px;color:#f8d596;font-weight:900;font-size:18px}
++  .costTag{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:999px;background:rgba(255,184,105,.08);border:1px solid rgba(255,184,105,.12)}
++  .itemFlavor{font-size:11px;color:#8f7e72}
++  .buy{border:0;border-radius:12px;padding:12px 12px;font-weight:900;background:linear-gradient(180deg,#433129,#2b211d);color:#efe2d4;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
++  .buy.afford{background:linear-gradient(180deg,#b45528,#7e3417);box-shadow:0 8px 20px rgba(135,54,22,.34), inset 0 0 0 1px rgba(255,255,255,.08)}
++  .buy.equipBtn{background:linear-gradient(180deg,#485658,#303b3d)}
++  .buy.equippedBtn{background:linear-gradient(180deg,#5f4030,#473126)}
++  .shopActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
++  .shopActions .nextBtn{flex:1;min-width:180px}
++  .perkChoices{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)}
++  @media (max-width:700px){
++    .shopTitle{font-size:27px}
++    .cashApoc{font-size:28px}
++    .shopCards{grid-template-columns:1fr}
++  }
+   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+   .perkChoices{display:none;margin-top:14px}
+   .perkTitle{font-weight:900;margin-bottom:10px;color:var(--accent2)}
+@@ -208,23 +259,29 @@
+   </div>
+ 
+   <div id="shopOverlay" class="overlay" style="display:none">
+-    <div class="panel">
++    <div class="panel shopPanel">
+       <div class="shopTop">
+         <div>
+-          <h2 style="margin-bottom:4px">WAVE CLEARED</h2>
+-          <div class="sub" id="shopSub">Spend cash before the next wave.</div>
++          <div class="shopHeaderTitle">Safehouse Trader</div>
++          <h2 class="shopTitle">WAVE CLEARED</h2>
++          <p class="shopSub" id="shopSub">Reload, patch yourself up, and buy whatever keeps you breathing through the next swarm.</p>
++          <div class="itemFlavor" id="shopFlavor">“Nothing here is pretty. It just keeps you alive.”</div>
++        </div>
++        <div class="shopCashWrap">
++          <div class="scrapLabel">Scrap on hand</div>
++          <div class="cashApoc" id="shopCash">$0</div>
+         </div>
+-        <div class="cash" id="shopCash">$0</div>
+       </div>
++      <div class="shopStats" id="shopStats"></div>
+       <div id="bossBanner" class="banner" style="display:none">⚠ WARDEN NEXT WAVE — gear up.</div>
+-      <div class="grid" id="shopGrid"></div>
++      <div class="shopSections" id="shopGrid"></div>
+ 
+       <div class="perkChoices" id="perkChoices">
+         <div class="perkTitle">PERMANENT PERK — PICK ONE</div>
+         <div class="grid" id="perkGrid"></div>
+       </div>
+ 
+-      <div class="row" style="margin-top:18px">
++      <div class="shopActions">
+         <button class="nextBtn" id="saveNowBtn" style="background:#39454f">SAVE RUN</button>
+         <button class="nextBtn" id="nextWaveBtn">START NEXT WAVE</button>
+       </div>
+@@ -259,6 +316,8 @@
+     armorFill: document.getElementById('armorFill'),
+     shopCash: document.getElementById('shopCash'),
+     shopGrid: document.getElementById('shopGrid'),
++    shopStats: document.getElementById('shopStats'),
++    shopFlavor: document.getElementById('shopFlavor'),
+     perkChoices: document.getElementById('perkChoices'),
+     perkGrid: document.getElementById('perkGrid'),
+     bossWarn: document.getElementById('bossWarn'),
+@@ -605,36 +664,100 @@
+ 
+   function renderShop(){
+     ui.shopCash.textContent='$'+state.cash;
++    const bossNext = (state.wave+1)%10===0;
++    const shopLines = [
++      '“Nothing here is pretty. It just keeps you alive.”',
++      '“Buy ammo now or donate blood later.”',
++      '“The dead don’t haggle. I do.”',
++      bossNext ? '“Next wave smells like a Warden. Spend like you mean it.”' : '“Patch the holes, load the gun, keep moving.”'
++    ];
++    if(ui.shopFlavor) ui.shopFlavor.textContent = shopLines[(state.wave + state.kills) % shopLines.length];
++    if(ui.shopStats){
++      const statData = [
++        ['Current Weapon', weapons[player.weapon].name],
++        ['Damage', Math.round(getDamage())],
++        ['Fire Rate', getRate().toFixed(1) + '/s'],
++        ['Move Speed', Math.round(getSpeed())],
++        ['Armor', Math.round(player.armor) + ' / ' + Math.round(player.maxArmor)],
++        ['Med Status', Math.round(player.hp) + ' / ' + Math.round(player.maxHp)]
++      ];
++      ui.shopStats.innerHTML = statData.map(([label,val]) => `<div class="shopStat"><div class="shopStatLabel">${label}</div><div class="shopStatValue">${val}</div></div>`).join('');
++    }
+     ui.shopGrid.innerHTML='';
+-    for(const item of shopItems){
+-      const card=document.createElement('div'); card.className='card';
+-      const owned = item.weapon && state.owned.includes(item.weapon);
+-      const cost=itemCost(item);
+-      let buttonText=`BUY $${cost}`;
+-      if(owned) buttonText = player.weapon===item.weapon ? 'EQUIPPED' : 'EQUIP';
+-      card.innerHTML=`<div><h3>${item.name}</h3><p>${item.desc}</p></div><button class="buy">${buttonText}</button>`;
+-      const btn=card.querySelector('button');
+-      if(item.weapon && owned){
+-        btn.classList.add('afford');
+-        btn.onclick=()=>{
+-          player.weapon=item.weapon; player.ammo=getMag(); player.reloading=false;
+-          renderShop(); syncUI(); saveGame(false);
+-        };
+-      } else {
+-        btn.disabled = state.cash < cost;
+-        if(!btn.disabled) btn.classList.add('afford');
+-        btn.onclick=()=>{
+-          if(state.cash<cost) return;
+-          state.cash-=cost;
+-          if(item.weapon){
+-            state.owned.push(item.weapon);
+-            player.weapon=item.weapon;
+-            player.ammo=getMag();
+-          } else item.buy();
+-          renderShop(); syncUI(); saveGame(false);
+-        };
++
++    const sections = [
++      {key:'essentials', title:'Survival Supplies', note:'Patch wounds and hold the line.', filter:i=>['heal','armor'].includes(i.id)},
++      {key:'upgrades', title:'Bench Upgrades', note:'Permanent improvements from scavenged scrap.', filter:i=>['damage','fireRate','reload','mag','move'].includes(i.id)},
++      {key:'weapons', title:'Black Market Weapons', note:'Dirty hardware, still better than dying.', filter:i=>!!i.weapon}
++    ];
++    const flavor = {
++      heal:'Field dressing salvaged from clinic remains.',
++      armor:'Cut-down riot plates and scrap steel lining.',
++      damage:'Hot-loaded rounds and tuned internals.',
++      fireRate:'Loosened springs and shaved trigger pull.',
++      reload:'Cleaner mag wells and drilled muscle memory.',
++      mag:'Extended mags welded from mixed leftovers.',
++      move:'Lighter rigging and less dead weight.',
++      smg:'Compact spray piece for tight panic.',
++      shotgun:'Crude but ugly in the best way.',
++      rifle:'The all-round answer to most bad nights.',
++      combat:'Semi-auto room broom for meat walls.',
++      lmg:'Heavy iron for when the wave won’t stop.'
++    };
++    const metaMap = {
++      heal:'Aid', armor:'Defense', damage:'Weapon Mod', fireRate:'Weapon Mod', reload:'Handling', mag:'Weapon Mod', move:'Mobility',
++      smg:'Primary Weapon', shotgun:'Primary Weapon', rifle:'Primary Weapon', combat:'Primary Weapon', lmg:'Primary Weapon'
++    };
++
++    for(const section of sections){
++      const wrap=document.createElement('section'); wrap.className='shopSection';
++      wrap.innerHTML = `<div class="shopSectionHead"><div><h3 class="shopSectionTitle">${section.title}</h3><div class="shopSectionNote">${section.note}</div></div></div><div class="shopCards"></div>`;
++      const cardsWrap=wrap.querySelector('.shopCards');
++      for(const item of shopItems.filter(section.filter)){
++        const card=document.createElement('div'); card.className='shopCard';
++        const owned = item.weapon && state.owned.includes(item.weapon);
++        const equipped = owned && player.weapon===item.weapon;
++        const cost=itemCost(item);
++        let buttonText=`SCAVENGE • $${cost}`;
++        let badge = `<span class="badge utility">${metaMap[item.id]||'Gear'}</span>`;
++        if(equipped){buttonText='EQUIPPED'; badge=`<span class="badge equipped">Equipped</span>`;}
++        else if(owned){buttonText='EQUIP'; badge=`<span class="badge owned">Owned</span>`;}
++        const progressText = item.weapon ? (owned ? 'Already in stash' : 'One-time unlock') : ((state.upgrades[item.id]||0)>0 ? `Tier ${1+(state.upgrades[item.id]||0)}` : 'Fresh install');
++        card.innerHTML=`
++          <div>
++            <div class="shopCardTop"><div><div class="itemMeta">${metaMap[item.id]||'Gear'}</div><h3>${item.name}</h3></div>${badge}</div>
++            <p>${item.desc}</p>
++          </div>
++          <div>
++            <div class="costRow"><span class="costTag">${owned && !equipped ? 'READY' : '$'+cost}</span><span class="itemFlavor">${progressText}</span></div>
++            <div class="itemFlavor" style="margin:8px 0 10px">${flavor[item.id]||'Keeps you alive a little longer.'}</div>
++            <button class="buy">${buttonText}</button>
++          </div>`;
++        const btn=card.querySelector('button');
++        if(item.weapon && owned){
++          btn.classList.add('afford','equipBtn');
++          if(equipped){btn.classList.add('equippedBtn'); btn.disabled=true;}
++          btn.onclick=()=>{
++            player.weapon=item.weapon; player.ammo=getMag(); player.reloading=false;
++            renderShop(); syncUI(); saveGame(false);
++          };
++        } else {
++          btn.disabled = state.cash < cost;
++          if(!btn.disabled) btn.classList.add('afford');
++          btn.onclick=()=>{
++            if(state.cash<cost) return;
++            state.cash-=cost;
++            if(item.weapon){
++              state.owned.push(item.weapon);
++              player.weapon=item.weapon;
++              player.ammo=getMag();
++            } else item.buy();
++            renderShop(); syncUI(); saveGame(false);
++          };
++        }
++        cardsWrap.appendChild(card);
+       }
+-      ui.shopGrid.appendChild(card);
++      ui.shopGrid.appendChild(wrap);
+     }
+     if(state.wave%5===0){
+       renderPerks();
+@@ -663,7 +786,7 @@
+     }
+     ui.perkGrid.innerHTML='';
+     for(const p of currentPerks){
+-      const c=document.createElement('div');c.className='card';
++      const c=document.createElement('div');c.className='shopCard';
+       c.innerHTML=`<div><h3>${p[1]}</h3><p>${p[2]}</p></div><button class="buy afford">CHOOSE</button>`;
+       c.querySelector('button').onclick=()=>{
+         p[3]();
