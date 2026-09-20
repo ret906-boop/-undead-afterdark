@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V16
+name: Deploy Undead Afterdark V17
 
 on:
   push:
@@ -46,12 +46,19 @@ jobs:
           patch --batch --forward site/index.html < tools/v15.patch
           echo 'aff27b721899a6344f6eb44f22e4c9a8b7a9832e7cfc5c147d03ea190e36d10c  site/index.html' | sha256sum -c -
 
-      - name: Apply and verify V16 navigation combat controls
+      - name: Apply V16 navigation combat controls
         shell: bash
         run: |
           echo 'c6e8257f660c9ec3ccf163d157c242157810ca598c0a712f0f56503032f78843  tools/v16.patch' | sha256sum -c -
           patch --batch --forward site/index.html < tools/v16.patch
           echo 'f022eb4cd66edeab285e8321b6f1f0dfb7ca107e8afd4d84badb5b3f79b4ff76  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V17 emergency auto-fire
+        shell: bash
+        run: |
+          echo 'bc3db739e15e2400734bc0b792145835f50710f7778d17ef3e2b46a7087128d7  tools/v17.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v17.patch
+          echo 'bddb4b7ff78b5549c9f59835d97e588d6cd72ce01c4b51ea9e0187b7d3c2836b  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages

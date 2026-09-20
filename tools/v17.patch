@@ -1,0 +1,77 @@
+--- /mnt/data/undead_afterdark_v16_nav_auto_sprint.html	2026-09-20 21:07:36.785807353 +0000
++++ /mnt/data/undead_afterdark_v17_emergency_autofire.html	2026-09-20 21:08:22.174446759 +0000
+@@ -265,14 +265,14 @@
+       <div>
+         <h1>UNDEAD AFTERDARK</h1>
+         <div class="sub">Survive a living infected world. Build your loadout. Face a Warden every 10 waves.</div>
+-        <p><b>Desktop:</b> WASD to move, Shift to sprint, mouse to aim/fire. Auto-fire tracks the closest visible infected.</p>
+-        <p><b>Mobile:</b> Left half moves. Right half manually aims; push farther to fire. Sprint button boosts movement. Auto-fire handles the closest visible infected when you are not manually aiming.</p>
++        <p><b>Desktop:</b> WASD to move, Shift to sprint, mouse to aim/fire. Auto-fire only kicks in when an infected gets dangerously close.</p>
++        <p><b>Mobile:</b> Left half moves. Right half manually aims; push farther to fire. Sprint button boosts movement. Auto-fire only steps in when an infected is close to hitting you and you are not manually aiming.</p>
+       </div>
+       <div class="row" style="margin-top:8px">
+         <button class="startBtn" id="continueBtn" style="display:none;background:#355d43">CONTINUE SAVED RUN</button>
+         <button class="startBtn" id="startBtn">START NEW RUN</button>
+       </div>
+-      <div class="smallText" id="saveInfo">V16: routed infected, nearest-target auto-fire, sprint controls, apocalypse trader. Saves stay on this browser/device.</div>
++      <div class="smallText" id="saveInfo">V17: emergency-range auto-fire, routed infected, sprint controls, apocalypse trader. Saves stay on this browser/device.</div>
+     </div>
+   </div>
+ 
+@@ -569,16 +569,30 @@
+     return {x:dx/l,y:dy/l,pad};
+   }
+ 
++  function autoThreatRange(z){
++    // Emergency auto-fire only. Faster infected get a slightly larger danger bubble
++    // because they can reach the player sooner; slow brutes must get closer.
++    const contact=z.r+player.r+2;
++    const closing=Math.max(45,Math.min(125,z.speed*.76));
++    return contact+closing;
++  }
++
++  function isAutoThreat(z){
++    if(!z || z.dead || !state.zombies.includes(z)) return false;
++    const dx=z.x-player.x,dy=z.y-player.y;
++    const range=autoThreatRange(z);
++    if(dx*dx+dy*dy>range*range) return false;
++    return lineClearMap(player.x,player.y,z.x,z.y,3);
++  }
++
+   function nearestVisibleEnemy(){
+-    const nearest=[];
++    let best=null,bestD=Infinity;
+     for(const z of state.zombies){
+-      if(z.dead)continue;
++      if(!isAutoThreat(z)) continue;
+       const d=(z.x-player.x)**2+(z.y-player.y)**2;
+-      let i=0;while(i<nearest.length&&nearest[i].d<d)i++;
+-      if(i<8){nearest.splice(i,0,{z,d});if(nearest.length>8)nearest.pop()}
++      if(d<bestD){best=z;bestD=d}
+     }
+-    for(const c of nearest)if(lineClearMap(player.x,player.y,c.z.x,c.z.y,3))return c.z;
+-    return null;
++    return best;
+   }
+ 
+   function currentBiome(){return getChunk(Math.floor(player.x/CHUNK),Math.floor(player.y/CHUNK)).biome}
+@@ -610,7 +624,7 @@
+       }
+     }else{
+       btn.style.display='none';
+-      if(info) info.textContent='V12: cinematic HUD, wave counter, combat polish, improved infected. Saves stay on this browser/device.';
++      if(info) info.textContent='V17: emergency auto-fire, routed infected, sprint controls, apocalypse trader. Saves stay on this browser/device.';
+     }
+   }
+ 
+@@ -1200,8 +1214,8 @@
+     }
+     state.autoTargetTimer=Math.max(0,(state.autoTargetTimer||0)-dt);
+     if(state.autoFire!==false && !manualShot && !state.manualAimHold){
+-      if(state.autoTargetTimer<=0 || !state.autoTarget || state.autoTarget.dead || !state.zombies.includes(state.autoTarget) || !lineClearMap(player.x,player.y,state.autoTarget.x,state.autoTarget.y,3)){
+-        state.autoTarget=nearestVisibleEnemy();state.autoTargetTimer=.09;
++      if(state.autoTargetTimer<=0 || !isAutoThreat(state.autoTarget)){
++        state.autoTarget=nearestVisibleEnemy();state.autoTargetTimer=.07;
+       }
+       const target=state.autoTarget;
+       if(target){const dx=target.x-player.x,dy=target.y-player.y,l=Math.hypot(dx,dy)||1;player.aimX=dx/l;player.aimY=dy/l;shoot()}
