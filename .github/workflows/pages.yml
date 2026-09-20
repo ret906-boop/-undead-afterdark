@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V8
+name: Deploy Undead Afterdark V9
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild and verify V8 game
+      - name: Rebuild and verify V8 base
         shell: bash
         run: |
           mkdir -p site
@@ -29,6 +29,12 @@ jobs:
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
           echo '5b9567528d15c940a8fe47ac441c8c2da07a2fd5b7fad309180f9fa03d4d3014  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V9 animation build
+        shell: bash
+        run: |
+          python3 tools/patch_v9.py site/index.html
+          echo '09bec15f4ba03034892d2ad89c8de04a12b65a4a1a21d4a498c1468d4e0a1e0c  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
