@@ -1,0 +1,267 @@
+--- /mnt/data/undead_afterdark_v18_art_update.html	2026-09-20 21:34:48.780894314 +0000
++++ /mnt/data/undead_afterdark_v19_sound.html	2026-09-20 21:35:54.585991630 +0000
+@@ -204,6 +204,12 @@
+     .dir{width:86px;height:86px}
+     .knob{left:26px;top:26px}
+   }
++
++#soundBtn{position:absolute;right:max(12px,calc(env(safe-area-inset-right) + 8px));top:max(76px,calc(env(safe-area-inset-top) + 70px));z-index:9;
++  border:1px solid rgba(255,255,255,.13);border-radius:999px;padding:8px 11px;background:rgba(10,14,16,.76);color:#dfe6e4;
++  font:900 10px/1 system-ui;letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
++#soundBtn.off{opacity:.56;color:#9aa19f}
++@media (max-width:700px){#soundBtn{top:max(72px,calc(env(safe-area-inset-top) + 66px));padding:7px 9px;font-size:9px}}
+ </style>
+ <style id="ios-visible-viewport-fix">
+ html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;}
+@@ -223,6 +229,7 @@
+ <body>
+ <div id="wrap">
+   <canvas id="game"></canvas>
++  <button id="soundBtn" type="button">SOUND ON</button>
+ 
+   <div class="hud">
+     <div class="hudGroup">
+@@ -272,7 +279,7 @@
+         <button class="startBtn" id="continueBtn" style="display:none;background:#355d43">CONTINUE SAVED RUN</button>
+         <button class="startBtn" id="startBtn">START NEW RUN</button>
+       </div>
+-      <div class="smallText" id="saveInfo">V17: emergency-range auto-fire, routed infected, sprint controls, apocalypse trader. Saves stay on this browser/device.</div>
++      <div class="smallText" id="saveInfo">V19: full procedural sound pass, art update, routed infected, sprint controls. Saves stay on this browser/device.</div>
+     </div>
+   </div>
+ 
+@@ -341,7 +348,8 @@
+     bossWarn: document.getElementById('bossWarn'),
+     sprintBtn: document.getElementById('sprintBtn'), stamTxt: document.getElementById('stamTxt'), autoFireBtn: document.getElementById('autoFireBtn'), autoTxt: document.getElementById('autoTxt'),
+     bossBanner: document.getElementById('bossBanner'),
+-    shopSub: document.getElementById('shopSub')
++    shopSub: document.getElementById('shopSub'),
++    soundBtn: document.getElementById('soundBtn')
+   };
+ 
+   let W=innerWidth,H=(window.visualViewport?window.visualViewport.height:innerHeight);
+@@ -382,6 +390,75 @@
+   };
+ 
+ 
++  // Lightweight procedural audio. No external files, so mobile loads stay tiny.
++  const SOUND_PREF_KEY='undead_afterdark_sound_enabled';
++  let soundEnabled=localStorage.getItem(SOUND_PREF_KEY)!=='off';
++  let audioCtx=null, masterGain=null, ambienceGain=null;
++  let ambientSfxTimer=1.8, footstepTimer=0;
++  function ensureAudio(){
++    if(!soundEnabled) return null;
++    try{
++      if(!audioCtx){
++        const AC=window.AudioContext||window.webkitAudioContext;
++        if(!AC) return null;
++        audioCtx=new AC();
++        masterGain=audioCtx.createGain();masterGain.gain.value=.48;masterGain.connect(audioCtx.destination);
++        ambienceGain=audioCtx.createGain();ambienceGain.gain.value=.48;ambienceGain.connect(masterGain);
++      }
++      if(audioCtx.state==='suspended') audioCtx.resume();
++      return audioCtx;
++    }catch(e){return null}
++  }
++  function tone(freq=220,dur=.08,gain=.08,type='sine',slide=1,delay=0,out=null){
++    const ac=ensureAudio();if(!ac)return;
++    const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();
++    o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),t);o.frequency.exponentialRampToValueAtTime(Math.max(20,freq*slide),t+dur);
++    g.gain.setValueAtTime(Math.max(.0001,gain),t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
++    o.connect(g);g.connect(out||masterGain);o.start(t);o.stop(t+dur+.015);
++  }
++  function noiseBurst(dur=.08,gain=.08,freq=1200,type='lowpass',delay=0,out=null){
++    const ac=ensureAudio();if(!ac)return;
++    const len=Math.max(1,Math.floor(ac.sampleRate*dur)),buf=ac.createBuffer(1,len,ac.sampleRate),data=buf.getChannelData(0);
++    for(let i=0;i<len;i++)data[i]=(Math.random()*2-1)*(1-i/len);
++    const src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain(),t=ac.currentTime+delay;
++    src.buffer=buf;f.type=type;f.frequency.value=freq;f.Q.value=.7;
++    g.gain.setValueAtTime(gain,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
++    src.connect(f);f.connect(g);g.connect(out||masterGain);src.start(t);src.stop(t+dur+.01);
++  }
++  function sfxShot(w){
++    if(!soundEnabled)return;
++    const cfg={
++      sidearm:[95,.08,.16,1500],smg:[120,.055,.105,1900],shotgun:[62,.14,.27,900],rifle:[86,.075,.17,1650],combat:[70,.11,.22,1050],lmg:[73,.085,.20,1250]
++    }[w]||[95,.08,.15,1400];
++    noiseBurst(cfg[1],cfg[2],cfg[3],'lowpass');tone(cfg[0],cfg[1]*1.25,cfg[2]*.52,'square',.45);
++    if(w==='shotgun'||w==='combat'){noiseBurst(.18,.10,260,'lowpass',.015);tone(44,.16,.08,'sine',.65,.01)}
++    else tone(cfg[0]*2.4,.035,.025,'triangle',.7,.005);
++  }
++  function sfxReloadStart(){tone(680,.035,.045,'square',.75);tone(390,.045,.035,'triangle',.75,.055)}
++  function sfxReloadEnd(){tone(420,.035,.04,'square',1.18);tone(720,.025,.035,'triangle',.9,.045)}
++  function sfxHit(){noiseBurst(.045,.035,700,'bandpass');tone(115,.035,.025,'sine',.72)}
++  function sfxKill(z){
++    noiseBurst(z&&z.boss?.19:(z&&z.kind==='brute'?.13:.085),z&&z.boss?.14:.065,z&&z.boss?330:470,'lowpass');
++    tone(z&&z.boss?48:(z&&z.kind==='brute'?62:82),z&&z.boss?.26:.11,z&&z.boss?.11:.045,'sawtooth',.55);
++  }
++  function sfxHurt(){noiseBurst(.10,.095,430,'lowpass');tone(76,.15,.075,'sawtooth',.7)}
++  function sfxPickup(type){
++    if(type==='money'){tone(780,.045,.045,'triangle',1.35);tone(1040,.055,.035,'triangle',1.18,.05)}
++    else if(type==='health'){tone(330,.06,.045,'sine',1.35);tone(520,.08,.04,'sine',1.2,.055)}
++    else {tone(520,.035,.035,'square',.8);tone(690,.035,.03,'square',.8,.04)}
++  }
++  function sfxWave(boss=false){tone(boss?72:180,.18,boss?.095:.045,'sawtooth',boss?.62:1.15);tone(boss?52:260,.22,boss?.08:.04,'triangle',boss?.72:1.1,.15)}
++  function sfxWaveClear(){tone(330,.08,.04,'triangle',1.3);tone(520,.09,.045,'triangle',1.25,.08);tone(740,.12,.05,'triangle',1.08,.17)}
++  function sfxBuy(){tone(460,.04,.035,'square',1.1);tone(670,.05,.035,'triangle',1.15,.045)}
++  function sfxGameOver(){tone(150,.22,.08,'sawtooth',.65);tone(88,.45,.07,'sine',.45,.17)}
++  function sfxGrowl(z){
++    const base=z&&z.kind==='runner'?125:(z&&z.kind==='brute'?62:(z&&z.boss?48:82));
++    noiseBurst(.24,z&&z.boss?.06:.028,430,'lowpass',0,ambienceGain);tone(base,.28,z&&z.boss?.05:.022,'sawtooth',.72,0,ambienceGain);
++  }
++  function sfxStep(sprinting=false){noiseBurst(.035,sprinting?.026:.015,sprinting?260:210,'lowpass');tone(sprinting?72:60,.03,sprinting?.014:.008,'sine',.7)}
++  function refreshSoundButton(){if(!ui.soundBtn)return;ui.soundBtn.textContent=soundEnabled?'SOUND ON':'SOUND OFF';ui.soundBtn.classList.toggle('off',!soundEnabled)}
++  function toggleSound(){soundEnabled=!soundEnabled;localStorage.setItem(SOUND_PREF_KEY,soundEnabled?'on':'off');if(soundEnabled)ensureAudio();refreshSoundButton()}
++
+   const CHUNK=1200;
+   const chunks=new Map();
+   const biomeNames=['CITY','FOREST','SWAMP','DESERT','INDUSTRIAL'];
+@@ -731,6 +808,7 @@
+     setTimeout(()=>{ if(state.running && !state.inShop) ui.bossWarn.style.display='none'; }, 2200);
+     document.getElementById('shopOverlay').style.display='none';
+     syncUI();
++    sfxWave(boss);
+   }
+ 
+   function waveClear(){
+@@ -742,6 +820,7 @@
+     ui.bossBanner.style.display = ((state.wave+1)%10===0) ? 'block':'none';
+     renderShop();
+     document.getElementById('shopOverlay').style.display='flex';
++    sfxWaveClear();
+     saveGame(false);
+   }
+ 
+@@ -870,7 +949,7 @@
+               player.weapon=item.weapon;
+               player.ammo=getMag();
+             } else item.buy();
+-            renderShop(); syncUI(); saveGame(false);
++            sfxBuy();renderShop(); syncUI(); saveGame(false);
+           };
+         }
+         cardsWrap.appendChild(card);
+@@ -907,7 +986,7 @@
+       const c=document.createElement('div');c.className='shopCard';
+       c.innerHTML=`<div><h3>${p[1]}</h3><p>${p[2]}</p></div><button class="buy afford">CHOOSE</button>`;
+       c.querySelector('button').onclick=()=>{
+-        p[3]();
++        p[3]();sfxBuy();
+         currentPerks=[];
+         ui.perkChoices.style.display='none';
+         syncUI(); saveGame(false);
+@@ -1056,11 +1135,11 @@
+ 
+       if(d.type==='money'){
+         state.cash+=d.value;
+-        d.life=0;
++        d.life=0;sfxPickup('money');
+       }else if(d.type==='health'){
+         if(player.hp<player.maxHp){
+           player.hp=Math.min(player.maxHp,player.hp+d.value);
+-          d.life=0;
++          d.life=0;sfxPickup('health');
+         }
+       }else if(d.type==='ammo'){
+         const maxAmmo=getMag();
+@@ -1068,7 +1147,7 @@
+           player.ammo=maxAmmo;
+           player.reloading=false;
+           player.reloadTimer=0;
+-          d.life=0;
++          d.life=0;sfxPickup('ammo');
+         }
+       }
+     }
+@@ -1127,7 +1206,7 @@
+ 
+   function reload(){
+     if(player.reloading || player.ammo===getMag()) return;
+-    player.reloading=true; player.reloadTimer=getReload();
++    player.reloading=true; player.reloadTimer=getReload();sfxReloadStart();
+   }
+ 
+   function shoot(){
+@@ -1136,7 +1215,7 @@
+       return;
+     }
+     const w=weapons[player.weapon];
+-    player.ammo--;
++    player.ammo--;sfxShot(player.weapon);
+     player.fireCd=1/getRate();
+     player.shotKick=.11;
+     state.screenShake=Math.max(state.screenShake,player.weapon==='shotgun'||player.weapon==='combat'?0.8:(player.weapon==='lmg'?0.42:0.28));
+@@ -1183,7 +1262,7 @@
+     if(player.reloading){
+       player.reloadTimer-=dt;
+       if(player.reloadTimer<=0){
+-        player.reloading=false;player.ammo=getMag();
++        player.reloading=false;player.ammo=getMag();sfxReloadEnd();
+       }
+     }
+ 
+@@ -1200,6 +1279,14 @@
+     if(sprintWanted){sp*=1.58;player.stamina=Math.max(0,player.stamina-dt*34);player.staminaDelay=.75}
+     else if(player.staminaDelay<=0){player.stamina=Math.min(player.maxStamina,player.stamina+dt*21)}
+     moveWithMapCollision(player,mx*sp*dt,my*sp*dt,player.r+3);
++    footstepTimer=Math.max(0,footstepTimer-dt);
++    if(rawMove>.18&&footstepTimer<=0){sfxStep(sprintWanted);footstepTimer=sprintWanted?.19:.32}
++    ambientSfxTimer-=dt;
++    if(ambientSfxTimer<=0&&state.zombies.length){
++      let nearest=null,bd=Infinity;for(const z of state.zombies){const dd=(z.x-player.x)**2+(z.y-player.y)**2;if(dd<bd){bd=dd;nearest=z}}
++      if(nearest&&bd<650*650)sfxGrowl(nearest);
++      ambientSfxTimer=2.2+Math.random()*3.2;
++    }
+ 
+     let manualShot=false;
+     if(state.mouse.down){
+@@ -1260,7 +1347,7 @@
+           const a=Math.min(player.armor,dmg);
+           player.armor-=a;dmg-=a;
+         }
+-        player.hp-=dmg;
++        player.hp-=dmg;sfxHurt();
+         player.hurtAnim=.16;
+         state.screenShake=Math.max(state.screenShake,1.35);
+         if(player.hp<=0){gameOver();return}
+@@ -1272,12 +1359,12 @@
+         if(z.dead) continue;
+         const dx=b.x-z.x,dy=b.y-z.y;
+         if(dx*dx+dy*dy<(b.r+z.r)*(b.r+z.r)){
+-          z.hp-=b.damage;
++          z.hp-=b.damage;sfxHit();
+           z.hitFlash=.09;
+           state.hitMarker=.09;
+           {const bl=Math.hypot(b.vx,b.vy)||1;bloodBurst(b.x,b.y,z.kind==='brute'?6:4,85,b.vx/bl,b.vy/bl);}
+           if(z.hp<=0){
+-            z.dead=true;
++            z.dead=true;sfxKill(z);
+             bloodBurst(z.x,z.y,z.boss?24:(z.kind==='brute'?14:9),z.boss?190:125);
+             addBloodDecals(z);
+             state.screenShake=Math.max(state.screenShake,z.boss?1.5:(z.kind==='brute'?.75:.35));
+@@ -1302,7 +1389,7 @@
+     state.running=false;state.paused=true;
+     clearSave();
+     document.getElementById('gameOverStats').textContent=`Reached wave ${state.wave} with ${state.kills} kills and $${state.cash} cash.`;
+-    document.getElementById('gameOverOverlay').style.display='flex';
++    document.getElementById('gameOverOverlay').style.display='flex';sfxGameOver();
+   }
+ 
+   function syncUI(){
+@@ -1815,9 +1902,14 @@
+   const autoFireBtn=document.getElementById('autoFireBtn');
+   if(autoFireBtn) autoFireBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();state.autoFire=state.autoFire===false;state.autoTarget=null;state.autoTargetTimer=0;syncUI();saveGame(false)},{passive:false});
+ 
+-  document.getElementById('continueBtn').onclick=()=>loadSavedRun();
++  refreshSoundButton();
++  if(ui.soundBtn) ui.soundBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();toggleSound()},{passive:false});
++  const unlockAudioOnce=()=>{ensureAudio();removeEventListener('pointerdown',unlockAudioOnce);removeEventListener('keydown',unlockAudioOnce)};
++  addEventListener('pointerdown',unlockAudioOnce,{once:false});addEventListener('keydown',unlockAudioOnce,{once:false});
++
++  document.getElementById('continueBtn').onclick=()=>{ensureAudio();loadSavedRun()};
+   document.getElementById('startBtn').onclick=()=>{
+-    document.getElementById('startOverlay').style.display='none';
++    ensureAudio();document.getElementById('startOverlay').style.display='none';
+     reset();
+   };
+   document.getElementById('saveNowBtn').onclick=()=>saveGame(true);
