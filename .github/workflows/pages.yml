@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V10
+name: Deploy Undead Afterdark V12
 
 on:
   push:
@@ -21,14 +21,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild and verify V10 game
+      - name: Verify V12 payload
+        shell: bash
+        run: |
+          check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
+          check payload/v12/m00.txt b2196dfb44c3bf97b0d581f2266cd49b2a3628e0f50ab8042d8cb1960bd2efb8
+          check payload/v12/m01.txt 3d5b3f8bf2a246d019599731e9344940a860aa455cf03df9c2065c770a3a7881
+          check payload/v12/m02.txt aa840266bbf4c91b5308329dc860d6721831392d61e609bc85db1e980c7bf0fc
+          check payload/v12/m03.txt 4f8c76a9b4ac536dc63cea11935bdc78319a4ca1bf92872acb52cba8b979998d
+          check payload/v12/m04.txt b684b63fec76b66a8b40ddd9166aa289dba150bbd2b56fccce163e04c6376e86
+
+      - name: Rebuild and verify V12 game
         shell: bash
         run: |
           mkdir -p site
-          cat payload/v10/k00.txt payload/v10/k01a.txt payload/v10/k01b.txt payload/v10/k02.txt payload/v10/k03.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          cat payload/v12/m*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
-          echo '209e48445d4abe5888aa903c18130662c0b0e421e50fd70be35c0c4b3a6e458d  site/index.html' | sha256sum -c -
+          echo 'f81cde20b925a658facdc09bf2f6625a372660b44a3ed77498d93b5941ba7640  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
