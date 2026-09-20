@@ -25,7 +25,8 @@ jobs:
         shell: bash
         run: |
           check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
-          check payload/chunk00.txt b87f9f6c855ae890c34f4b79c8fdc299b13e5dc910c74f11c4ba679e34845ad8
+          check payload/chunk00a.txt 6d53f22f0075b3ccf04f07719f40e5a56eef3246dcd80d751f8c7ca56fa9a70e
+          check payload/chunk00b.txt 16185a47fd64ec549ab757148fb8862891134d7eca039e6cbab7d7a53465c44b
           check payload/chunk01.txt 3b2e3a1b77b4472024301ff09511281746ffb099d15b2d1d35d7e4e63278420f
           check payload/chunk02.txt 562f9b425d5c81ca5aa452a95873ba5623e4f7c5e624cfec7f38226cd6d4f027
           check payload/chunk03.txt 061cd2faaa4dc98446bcb14e4fc83805e19a09e63e62104609e966141b69474f
@@ -41,7 +42,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p site
-          cat payload/chunk00.txt payload/chunk01.txt payload/chunk02.txt payload/chunk03.txt payload/chunk04a.txt payload/chunk04b.txt payload/chunk05.txt payload/chunk06a.txt payload/chunk06b.txt payload/chunk07.txt payload/chunk08.txt | tr -d '[:space:]' | base64 --decode > site/index.html
+          cat payload/chunk00a.txt payload/chunk00b.txt payload/chunk01.txt payload/chunk02.txt payload/chunk03.txt payload/chunk04a.txt payload/chunk04b.txt payload/chunk05.txt payload/chunk06a.txt payload/chunk06b.txt payload/chunk07.txt payload/chunk08.txt | tr -d '[:space:]' | base64 --decode > site/index.html
           echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
