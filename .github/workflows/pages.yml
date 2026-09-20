@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V9
+name: Deploy Undead Afterdark V10
 
 on:
   push:
@@ -21,20 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild and verify V8 base
+      - name: Rebuild and verify V10 game
         shell: bash
         run: |
           mkdir -p site
-          cat payload/v8/h*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          cat payload/v10/k*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
-          echo '5b9567528d15c940a8fe47ac441c8c2da07a2fd5b7fad309180f9fa03d4d3014  site/index.html' | sha256sum -c -
-
-      - name: Apply and verify V9 animation build
-        shell: bash
-        run: |
-          python3 tools/patch_v9.py site/index.html
-          echo 'edf656097dffe4a061d5518af3fa8f4f44fdb53d5e038f0b0494f5279ce1a829  site/index.html' | sha256sum -c -
+          echo '209e48445d4abe5888aa903c18130662c0b0e421e50fd70be35c0c4b3a6e458d  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
