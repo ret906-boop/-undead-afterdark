@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V21
+name: Deploy Undead Afterdark V22
 
 on:
   push:
@@ -85,6 +85,14 @@ jobs:
           echo '2cb08bc4a56935583af1689fadc953a9c4b09ea3efb92717e23a5ff253ab6394  tools/v21.patch' | sha256sum -c -
           patch --batch --forward site/index.html < tools/v21.patch
           echo 'd638ca4f091836d8fe488f9deb523b691c4b9583f3642f675258425f69e0b03b  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V22 handgun and organic world
+        shell: bash
+        run: |
+          echo 'b988c8d497298c67ccf5c3a641e59c1ade9038e1c73667798c6dfd40c61485d8  tools/v22.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v22.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v22.patch
+          patch --batch --forward site/index.html < /tmp/v22.patch
+          echo 'c9b14e2b6bfc1fa8335de18abf2250ea38376ed33f42cbbeb3790fa4afcbe294  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
