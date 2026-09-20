@@ -113,13 +113,13 @@ jobs:
       - name: Apply and verify V25 imported models
         shell: bash
         run: |
-          echo '3ffcb4bceec2e35a0c0486b62ab5ba6d7151eacab43ab58406d1c220ae51e3c5  tools/v25.patch.gz.b64' | sha256sum -c -
+          echo '30ac11f864003fb68867c4ab080e4b5f22c620f80a38bb7121a1c191a326fc53  tools/v25.patch.gz.b64' | sha256sum -c -
           tr -d '[:space:]' < tools/v25.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v25.patch
           patch --batch --forward site/index.html < /tmp/v25.patch
-          echo '6e480b6bd5ab6ab2672d0c232034c83efe76832fe7a0706a5c256e8a14a2837d  site/index.html' | sha256sum -c -
+          echo '3d2b98928822329b1eee58960899f4c4c64d0ccddf6e77932c855004c2dbbe84  site/index.html' | sha256sum -c -
           mkdir -p site/assets/models
-          tr -d '[:space:]' < assets/models/v25_atlas.webp.b64 | base64 --decode > site/assets/models/v25_atlas.webp
-          echo '79cbb2b3e25beaf710524e7ede8d95b7a99fd3390e81067c76fa00fa0b6a4c04  site/assets/models/v25_atlas.webp' | sha256sum -c -
+          tr -d '[:space:]' < assets/models/v25_atlas.webp.b64 | base64 --decode > site/assets/models/v25_atlas_small.webp
+          echo '5f4406b00ce3353716229925d1cd19c34ce280165294262bfdb4844de47fcd72  site/assets/models/v25_atlas_small.webp' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
