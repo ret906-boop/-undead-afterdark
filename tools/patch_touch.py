@@ -80,4 +80,34 @@ patch=r'''  document.getElementById('dashBtn').addEventListener('pointerdown',da
     dash();
   },{passive:false});'''
 if a not in s: raise SystemExit('touch patch anchor missing')
-p.write_text(s.replace(a,patch,1))
+s=s.replace(a,patch,1)
+
+# iPhone Safari/embedded browser viewport fix. 100vh often extends beneath browser chrome,
+# which was pushing the controls off the visible screen.
+style=r'''<style id="ios-visible-viewport-fix">
+html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;}
+#wrap{position:fixed!important;left:0!important;top:0!important;width:100%!important;height:var(--game-vh,100dvh)!important;min-height:0!important;overflow:hidden!important;}
+#game{width:100%!important;height:100%!important;}
+.hud{top:calc(8px + env(safe-area-inset-top))!important;left:calc(8px + env(safe-area-inset-left))!important;right:calc(8px + env(safe-area-inset-right))!important;}
+.touch{bottom:calc(10px + env(safe-area-inset-bottom))!important;padding-left:calc(14px + env(safe-area-inset-left))!important;padding-right:calc(14px + env(safe-area-inset-right))!important;}
+@media (orientation:portrait){
+  .touch{bottom:calc(8px + env(safe-area-inset-bottom))!important;}
+  .dir{width:82px!important;height:82px!important;}
+  .btn{width:68px!important;height:68px!important;}
+  .btn.small{width:56px!important;height:56px!important;}
+  .knob{left:24px!important;top:24px!important;}
+}
+</style>'''
+if '</head>' not in s: raise SystemExit('head close missing')
+s=s.replace('</head>',style+'\n</head>',1)
+
+# Make the canvas/game world use the visible viewport height, not Safari's hidden layout viewport.
+s=s.replace('let W=innerWidth,H=innerHeight;',"let W=innerWidth,H=(window.visualViewport?window.visualViewport.height:innerHeight);",1)
+s=s.replace('W=innerWidth;H=innerHeight;',"W=(window.visualViewport?window.visualViewport.width:innerWidth);H=(window.visualViewport?window.visualViewport.height:innerHeight);document.documentElement.style.setProperty('--game-vh',H+'px');",1)
+resize_anchor="addEventListener('resize',resize); resize();"
+if resize_anchor in s:
+    s=s.replace(resize_anchor,"addEventListener('resize',resize); if(window.visualViewport){visualViewport.addEventListener('resize',resize);visualViewport.addEventListener('scroll',resize);} resize();",1)
+else:
+    s=s.replace("addEventListener('resize',resize);", "addEventListener('resize',resize); if(window.visualViewport){visualViewport.addEventListener('resize',resize);visualViewport.addEventListener('scroll',resize);}",1)
+
+p.write_text(s)
