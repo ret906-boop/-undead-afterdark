@@ -113,7 +113,7 @@ jobs:
       - name: Apply and verify V25 imported models
         shell: bash
         run: |
-          echo 'fbb899a793c9a3ef78e07bab693bb685ea5410782956771aafecdbf9573abf67  tools/v25.patch.gz.b64' | sha256sum -c -
+          echo '3ffcb4bceec2e35a0c0486b62ab5ba6d7151eacab43ab58406d1c220ae51e3c5  tools/v25.patch.gz.b64' | sha256sum -c -
           tr -d '[:space:]' < tools/v25.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v25.patch
           patch --batch --forward site/index.html < /tmp/v25.patch
           echo '6e480b6bd5ab6ab2672d0c232034c83efe76832fe7a0706a5c256e8a14a2837d  site/index.html' | sha256sum -c -
