@@ -53,6 +53,57 @@ jobs:
           echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
+      - name: Add iPhone touch fallback
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('site/index.html')
+          s = p.read_text()
+          anchor = "  document.getElementById('dashBtn').addEventListener('pointerdown',dash);"
+          patch = r'''  document.getElementById('dashBtn').addEventListener('pointerdown',dash);
+
+  // iPhone/iPad Safari fallback: use native touch events in addition to pointer events.
+  // This keeps desktop input unchanged and prevents mobile controls from becoming decorative circles.
+  document.querySelector('.touch').style.pointerEvents='auto';
+  const dashTouchBtn=document.getElementById('dashBtn');
+  const touchPos=(e)=> (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]);
+  const endJoyTouch=(e)=>{
+    e.preventDefault();
+    state.joy={x:0,y:0,active:false};
+    knob.style.transform='translate(0,0)';
+  };
+  pad.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=touchPos(e); if(t) joyPoint(t.clientX,t.clientY);
+  },{passive:false});
+  pad.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    const t=touchPos(e); if(t) joyPoint(t.clientX,t.clientY);
+  },{passive:false});
+  pad.addEventListener('touchend',endJoyTouch,{passive:false});
+  pad.addEventListener('touchcancel',endJoyTouch,{passive:false});
+
+  fireBtn.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    state.fireHeld=true;
+    const t=touchPos(e); if(t) updateFireAim(t.clientX,t.clientY);
+  },{passive:false});
+  fireBtn.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    const t=touchPos(e); if(t && state.fireHeld) updateFireAim(t.clientX,t.clientY);
+  },{passive:false});
+  fireBtn.addEventListener('touchend',e=>{e.preventDefault();stopFireAim();},{passive:false});
+  fireBtn.addEventListener('touchcancel',e=>{e.preventDefault();stopFireAim();},{passive:false});
+  dashTouchBtn.addEventListener('touchstart',e=>{e.preventDefault();dash();},{passive:false});'''
+          if anchor not in s:
+              raise SystemExit('touch-control patch anchor not found')
+          s = s.replace(anchor, patch, 1)
+          p.write_text(s)
+          PY
+          grep -q "iPhone/iPad Safari fallback" site/index.html
+          grep -q "addEventListener('touchstart'" site/index.html
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
