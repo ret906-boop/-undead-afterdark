@@ -1,0 +1,28 @@
+name: Debug V25 Atlas
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect atlas
+        shell: bash
+        run: |
+          tr -d '[:space:]' < assets/models/v25_atlas.webp.b64 | base64 --decode > /tmp/v25_atlas.webp
+          echo "BYTES=$(wc -c < /tmp/v25_atlas.webp)"
+          sha256sum /tmp/v25_atlas.webp
+          file /tmp/v25_atlas.webp
+          python3 - <<'PY'
+          from pathlib import Path
+          b=Path('/tmp/v25_atlas.webp').read_bytes()
+          print('RIFF=',b[:4], 'WEBP=', b[8:12], 'LEN=', len(b))
+          assert b[:4] == b'RIFF' and b[8:12] == b'WEBP'
+          PY
