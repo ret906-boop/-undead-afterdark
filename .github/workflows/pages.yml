@@ -21,23 +21,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify payload pieces
+        shell: bash
+        run: |
+          check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
+          check payload/chunk00.txt b87f9f6c855ae890c34f4b79c8fdc299b13e5dc910c74f11c4ba679e34845ad8
+          check payload/chunk01.txt 3b2e3a1b77b4472024301ff09511281746ffb099d15b2d1d35d7e4e63278420f
+          check payload/chunk02.txt 562f9b425d5c81ca5aa452a95873ba5623e4f7c5e624cfec7f38226cd6d4f027
+          check payload/chunk03.txt 061cd2faaa4dc98446bcb14e4fc83805e19a09e63e62104609e966141b69474f
+          check payload/chunk04a.txt 7216d51bc740da5e599197d7bc5611fda805af053431d86860df981e29157d3c
+          check payload/chunk04b.txt bfea061c0dffbbca8ec75478c3c0b11230e69dac5c2199f3bc003379718edd7b
+          check payload/chunk05.txt df415669d069310972cff9c28df66dd9e1b08a0bbecd1e0f5938ee2766e1ddce
+          check payload/chunk06a.txt 72558ce4fc387c0a16ec3997de81b5e5ac2020efd4166618fe401b1e88c74c5a
+          check payload/chunk06b.txt f270b52853ad22bad8ed18b90aa3e400c47829449ac6599a759b79770cd295f7
+          check payload/chunk07.txt 956a597fabf0692a841b5e8d92aa7426704fa9a66aabd96dba7225a0aac4820e
+          check payload/chunk08.txt 786ad9175440fd0e24e289ecb30b7361316d5d696a9a9dffa6ffc13fc97b888a
+
       - name: Rebuild and verify game
         shell: bash
         run: |
           mkdir -p site
-          cat \
-            payload/chunk00.txt \
-            payload/chunk01.txt \
-            payload/chunk02.txt \
-            payload/chunk03.txt \
-            payload/chunk04a.txt \
-            payload/chunk04b.txt \
-            payload/chunk05.txt \
-            payload/chunk06a.txt \
-            payload/chunk06b.txt \
-            payload/chunk07.txt \
-            payload/chunk08.txt \
-            | tr -d '[:space:]' | base64 --decode > site/index.html
+          cat payload/chunk00.txt payload/chunk01.txt payload/chunk02.txt payload/chunk03.txt payload/chunk04a.txt payload/chunk04b.txt payload/chunk05.txt payload/chunk06a.txt payload/chunk06b.txt payload/chunk07.txt payload/chunk08.txt | tr -d '[:space:]' | base64 --decode > site/index.html
           echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
