@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V13
+name: Deploy Undead Afterdark V14
 
 on:
   push:
@@ -21,30 +21,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify V12 payload
+      - name: Verify V14 payload
         shell: bash
         run: |
           check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
-          check payload/v12/m00.txt b2196dfb44c3bf97b0d581f2266cd49b2a3628e0f50ab8042d8cb1960bd2efb8
-          check payload/v12/m01.txt 3d5b3f8bf2a246d019599731e9344940a860aa455cf03df9c2065c770a3a7881
-          check payload/v12/m02.txt aa840266bbf4c91b5308329dc860d6721831392d61e609bc85db1e980c7bf0fc
-          check payload/v12/m03.txt 4f8c76a9b4ac536dc63cea11935bdc78319a4ca1bf92872acb52cba8b979998d
-          check payload/v12/m04.txt b684b63fec76b66a8b40ddd9166aa289dba150bbd2b56fccce163e04c6376e86
+          check payload/v14/n00.txt e23a25f23ec9b57c0ddc2d4a0c586270979759d2c07d06fe011a6c7c69859126
+          check payload/v14/n01.txt f9f034bbd2317b549efce188541b3946708f524257195bfebba1ee95578b2af3
+          check payload/v14/n02.txt d95b580c45044aaca35d4a65339ba92eb7c24bbae8a1cd2b41ccdbe71af6c601
+          check payload/v14/n03.txt fbcbe584bc3ce1ae4b0a3afdd5dc101e729ad0d400ba9a19ee1e947fbfd8833e
+          check payload/v14/n04.txt 33370fb961d99326df2e4ecb608364988a1ed9c3a730d0ff7400275cde251677
 
-      - name: Rebuild V12 base
+      - name: Rebuild and verify V14 game
         shell: bash
         run: |
           mkdir -p site
-          cat payload/v12/m*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          cat payload/v14/n*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
-          echo 'f81cde20b925a658facdc09bf2f6625a372660b44a3ed77498d93b5941ba7640  site/index.html' | sha256sum -c -
-
-      - name: Apply and verify V13 polish
-        shell: bash
-        run: |
-          (cd site && patch -p1 < ../tools/v13.patch)
-          echo '306a6865a7b2523c33989e6c5f60122fa1b49ffa3ec099521bd69d4b0c809a86  site/index.html' | sha256sum -c -
+          echo 'ab71ab29eca53a183b34bcd0e25211b6ea5f223e7a00c3de68f5b844426fe289  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
