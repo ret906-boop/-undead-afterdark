@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           python3 tools/patch_v9.py site/index.html
-          echo '09bec15f4ba03034892d2ad89c8de04a12b65a4a1a21d4a498c1468d4e0a1e0c  site/index.html' | sha256sum -c -
+          echo 'edf656097dffe4a061d5518af3fa8f4f44fdb53d5e038f0b0494f5279ce1a829  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
