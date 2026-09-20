@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark
+name: Deploy Undead Afterdark V8
 
 on:
   push:
@@ -21,43 +21,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify compressed chunks
-        shell: bash
-        run: |
-          check() { got=$(tr -d '[:space:]' < "$1" | sha256sum | cut -d' ' -f1); echo "$1 $got"; test "$got" = "$2"; }
-          check payload/gz/g00.txt c3534cbde760602aa92d3a9d0a651627e4dd389a41a9b006129cbd14afbe7aea
-          check payload/gz/g01.txt 72d495658e48c4544bbc79c5e21bd5c2064d02c2562afca02ee6d7bbdaf03edf
-          check payload/gz/g02.txt f50ca35e1e86ceae1bd00f0593f25c695a26fc65824f21c6751650f7d157fc17
-          check payload/gz/g03.txt 4147954b55cd9f6444642e52b12135392969702de5c579808054b26478d9aa2f
-          check payload/gz/g04.txt 6c922a447e964e02371a2eb97fa273ef5ab8ac707ab0a816851c76b0baa48a23
-          check payload/gz/g05.txt 7559a646814d90e78e133a8942cd54aa20526c657e7a075145b0aa913ca2c45a
-          check payload/gz/g06.txt df1f8ceaea88e904a3b6815eb2b9bfe14041f9a64994a05134258b31d09f08c7
-          check payload/gz/g07.txt 91867a14b99696a3d85f98d905ecf154b5658309240f2cfd8e89654ba490e6ee
-          check payload/gz/g08.txt bad8f6753f39d737746497030539eb25ebe8417aba0c5730d7c746de2ce120f5
-          check payload/gz/g09.txt 116b327213850029dadf11bf241e9b0d1d4b65ade551024a301fca7351c8e0fc
-          check payload/gz/g10.txt 67736b048c89b59ae60c2f86b3aeaef1b9e07982d863b5ea75450e6984247b1a
-          check payload/gz/g11.txt 61c9a84d8e059cea1b89dace50e26f307f1e6b6096ade5122c52d70104791fc1
-          check payload/gz/g12.txt 5c125a6e50ffe4915b7caab16a57c32cc8186b41354103c386ac4334f9ea876e
-          check payload/gz/g13.txt f588cf36e5d65dbf940a2e807516a1eb6620801754eacc4e99f5a420f14ae539
-          check payload/gz/g14.txt c8cb205eabc0a6a0f9504c381385d29e9b21d4106b4c42ca7ce9d6c5e18f0788
-          check payload/gz/g15.txt 19c1e8f02e96fe995faf4de0ee2a6672fed6216af27b10ad5e7c02f99e2219fc
-          check payload/gz/g16.txt 21c5157a2e9b0d090efe8009b06f4f826e5211658cf183011d9636de6ede1670
-
-      - name: Rebuild and verify game
+      - name: Rebuild and verify V8 game
         shell: bash
         run: |
           mkdir -p site
-          cat payload/gz/g*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          cat payload/v8/h*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
-          echo '6c1367ed5f1b9563618f692ac63f83386ca3548ece29d012b2dd6b1ff8b49e0a  site/index.html' | sha256sum -c -
+          echo '5b9567528d15c940a8fe47ac441c8c2da07a2fd5b7fad309180f9fa03d4d3014  site/index.html' | sha256sum -c -
           touch site/.nojekyll
-
-      - name: Add iPhone touch fallback
-        shell: bash
-        run: |
-          python3 tools/patch_touch.py site/index.html
-          grep -q "iPhone/iPad Safari native touch fallback" site/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
