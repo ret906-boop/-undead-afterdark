@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V15
+name: Deploy Undead Afterdark V16
 
 on:
   push:
@@ -40,11 +40,18 @@ jobs:
           rm site/game.gz
           echo 'ab71ab29eca53a183b34bcd0e25211b6ea5f223e7a00c3de68f5b844426fe289  site/index.html' | sha256sum -c -
 
-      - name: Apply and verify V15 apocalypse shop
+      - name: Apply V15 apocalypse shop
         shell: bash
         run: |
           patch --batch --forward site/index.html < tools/v15.patch
           echo 'aff27b721899a6344f6eb44f22e4c9a8b7a9832e7cfc5c147d03ea190e36d10c  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V16 navigation combat controls
+        shell: bash
+        run: |
+          echo 'c6e8257f660c9ec3ccf163d157c242157810ca598c0a712f0f56503032f78843  tools/v16.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v16.patch
+          echo 'f022eb4cd66edeab285e8321b6f1f0dfb7ca107e8afd4d84badb5b3f79b4ff76  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages

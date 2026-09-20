@@ -1,0 +1,332 @@
+--- /mnt/data/undead_afterdark_v15_apoc_shop.html	2026-09-20 20:53:16.830227441 +0000
++++ /mnt/data/undead_afterdark_v16_nav_auto_sprint.html	2026-09-20 20:55:48.998178028 +0000
+@@ -61,6 +61,19 @@
+   }
+   .touch{display:none!important}
+   #dashBtn{display:none!important}
++  .combatControls{position:absolute;inset:0;z-index:8;pointer-events:none;display:none}
++  .combatBtn{position:absolute;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;
++    width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.18);
++    background:radial-gradient(circle at 35% 28%,rgba(120,130,126,.28),rgba(26,32,32,.92) 62%);
++    box-shadow:0 8px 26px rgba(0,0,0,.46),inset 0 0 0 1px rgba(255,255,255,.035);
++    color:#f0eee8;font:900 11px/1.08 system-ui;text-align:center;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px}
++  .combatBtn:active,.combatBtn.held{transform:scale(.95);background:radial-gradient(circle at 35% 28%,rgba(183,94,49,.44),rgba(57,29,20,.94) 67%)}
++  #sprintBtn{left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom) + 14px));transform:translateX(-50%)}
++  #sprintBtn.held{transform:translateX(-50%) scale(.95)}
++  #autoFireBtn{right:max(16px,calc(env(safe-area-inset-right) + 12px));bottom:max(112px,calc(env(safe-area-inset-bottom) + 104px));width:62px;height:62px;background:rgba(33,44,40,.88)}
++  #autoFireBtn.off{opacity:.55;background:rgba(38,38,38,.82)}
++  .stamMini{font-size:9px;color:#c9d7c5;letter-spacing:.04em}
++  @media (pointer:coarse){.combatControls{display:block}}
+   .cluster{display:flex;gap:14px;align-items:flex-end}
+   .btn{
+     width:86px;height:86px;border-radius:50%;
+@@ -242,19 +255,24 @@
+     </div>
+   </div>
+ 
++  <div class="combatControls" id="combatControls">
++    <div id="sprintBtn" class="combatBtn">SPRINT<div class="stamMini" id="stamTxt">100%</div></div>
++    <div id="autoFireBtn" class="combatBtn">AUTO<div class="stamMini" id="autoTxt">ON</div></div>
++  </div>
++
+   <div id="startOverlay" class="overlay">
+     <div class="panel hero">
+       <div>
+         <h1>UNDEAD AFTERDARK</h1>
+         <div class="sub">Survive a living infected world. Build your loadout. Face a Warden every 10 waves.</div>
+-        <p><b>Desktop:</b> WASD to move, mouse to aim, hold left click to fire.</p>
+-        <p><b>Mobile:</b> Drag anywhere on the left half to move. Hold and drag on the right half to aim and fire.</p>
++        <p><b>Desktop:</b> WASD to move, Shift to sprint, mouse to aim/fire. Auto-fire tracks the closest visible infected.</p>
++        <p><b>Mobile:</b> Left half moves. Right half manually aims; push farther to fire. Sprint button boosts movement. Auto-fire handles the closest visible infected when you are not manually aiming.</p>
+       </div>
+       <div class="row" style="margin-top:8px">
+         <button class="startBtn" id="continueBtn" style="display:none;background:#355d43">CONTINUE SAVED RUN</button>
+         <button class="startBtn" id="startBtn">START NEW RUN</button>
+       </div>
+-      <div class="smallText" id="saveInfo">V12: cinematic HUD, wave counter, combat polish, improved infected. Saves stay on this browser/device.</div>
++      <div class="smallText" id="saveInfo">V16: routed infected, nearest-target auto-fire, sprint controls, apocalypse trader. Saves stay on this browser/device.</div>
+     </div>
+   </div>
+ 
+@@ -321,6 +339,7 @@
+     perkChoices: document.getElementById('perkChoices'),
+     perkGrid: document.getElementById('perkGrid'),
+     bossWarn: document.getElementById('bossWarn'),
++    sprintBtn: document.getElementById('sprintBtn'), stamTxt: document.getElementById('stamTxt'), autoFireBtn: document.getElementById('autoFireBtn'), autoTxt: document.getElementById('autoTxt'),
+     bossBanner: document.getElementById('bossBanner'),
+     shopSub: document.getElementById('shopSub')
+   };
+@@ -348,7 +367,7 @@
+   const state = {
+     running:false, paused:false, inShop:false, wave:1, kills:0, cash:0,
+     zombies:[], bullets:[], drops:[], particles:[], decals:[], keys:{}, mouse:{x:0,y:0,down:false},
+-    joy:{x:0,y:0,active:false}, fireHeld:false, fireAim:{x:1,y:0,active:false},
++    joy:{x:0,y:0,active:false}, fireHeld:false, fireAim:{x:1,y:0,active:false}, manualAimHold:false, autoFire:true, autoTarget:null, autoTargetTimer:0, sprintHeld:false,
+     spawned:0, spawnTarget:0, spawnTimer:0, waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+     upgrades:{damage:0, fireRate:0, reload:0, mag:0, move:0, dash:0},
+     perks:{pierce:false, vampire:false, runner:false, adrenaline:false, quick:false, heavy:false, doubleTap:false},
+@@ -359,7 +378,7 @@
+     x:W/2,y:H/2,r:14,hp:100,maxHp:100,armor:0,maxArmor:0,
+     baseSpeed:220,weapon:'sidearm',ammo:12,reloading:false,reloadTimer:0,
+     fireCd:0,dashCd:0,dashMax:3.5,dashTime:0,invuln:0,aimX:1,aimY:0,
+-    animT:0,moveMag:0,shotKick:0,hurtAnim:0
++    animT:0,moveMag:0,shotKick:0,hurtAnim:0,stamina:100,maxStamina:100,staminaDelay:0
+   };
+ 
+ 
+@@ -477,6 +496,91 @@
+     return false;
+   }
+ 
++
++  function segmentRectHitT(x1,y1,x2,y2,rect,pad=0){
++    const minX=rect.x-pad,maxX=rect.x+rect.w+pad,minY=rect.y-pad,maxY=rect.y+rect.h+pad;
++    const dx=x2-x1,dy=y2-y1;
++    let tmin=0,tmax=1;
++    const axis=(p,d,min,max)=>{
++      if(Math.abs(d)<1e-9) return (p>=min&&p<=max)?[-Infinity,Infinity]:null;
++      let a=(min-p)/d,b=(max-p)/d;if(a>b){const q=a;a=b;b=q}return[a,b];
++    };
++    const ax=axis(x1,dx,minX,maxX),ay=axis(y1,dy,minY,maxY);
++    if(!ax||!ay)return null;
++    tmin=Math.max(tmin,ax[0],ay[0]);tmax=Math.min(tmax,ax[1],ay[1]);
++    return tmax>=tmin&&tmax>=0&&tmin<=1?Math.max(0,tmin):null;
++  }
++
++  function firstBlockingSolid(x1,y1,x2,y2,pad=0){
++    const minCX=Math.floor((Math.min(x1,x2)-pad)/CHUNK)-1,maxCX=Math.floor((Math.max(x1,x2)+pad)/CHUNK)+1;
++    const minCY=Math.floor((Math.min(y1,y2)-pad)/CHUNK)-1,maxCY=Math.floor((Math.max(y1,y2)+pad)/CHUNK)+1;
++    let best=null,bestT=Infinity;
++    for(let cy=minCY;cy<=maxCY;cy++)for(let cx=minCX;cx<=maxCX;cx++){
++      for(const s of getChunk(cx,cy).solids){
++        const t=segmentRectHitT(x1,y1,x2,y2,s,pad);
++        if(t!==null&&t<bestT){bestT=t;best=s}
++      }
++    }
++    return best?{solid:best,t:bestT}:null;
++  }
++
++  function lineClearMap(x1,y1,x2,y2,pad=0){return !firstBlockingSolid(x1,y1,x2,y2,pad)}
++
++  function chooseZombieDetour(z,blocker,pad){
++    if(!blocker)return null;
++    const s=blocker.solid,margin=pad+14;
++    const pts=[
++      {x:s.x-margin,y:s.y-margin},{x:s.x+s.w+margin,y:s.y-margin},
++      {x:s.x-margin,y:s.y+s.h+margin},{x:s.x+s.w+margin,y:s.y+s.h+margin}
++    ];
++    let best=null,bestScore=Infinity;
++    const sidePref=z.navSide||((z.x+z.y)%2<1?1:-1);
++    const toPlayerX=player.x-z.x,toPlayerY=player.y-z.y;
++    for(const p of pts){
++      if(collidesMap(p.x,p.y,pad))continue;
++      if(!lineClearMap(z.x,z.y,p.x,p.y,pad*.82))continue;
++      const dz=Math.hypot(p.x-z.x,p.y-z.y),dp=Math.hypot(player.x-p.x,player.y-p.y);
++      const cross=toPlayerX*(p.y-z.y)-toPlayerY*(p.x-z.x);
++      const sidePenalty=(Math.sign(cross||sidePref)!==Math.sign(sidePref))?50:0;
++      const score=dz+dp*.82+sidePenalty;
++      if(score<bestScore){bestScore=score;best={x:p.x,y:p.y}}
++    }
++    return best;
++  }
++
++  function zombieMoveVector(z,dt){
++    const pad=Math.max(10,z.r*.56);
++    z.navTimer=Math.max(0,(z.navTimer||0)-dt);
++    const directDX=player.x-z.x,directDY=player.y-z.y;
++    if(z.navTimer<=0){
++      const blocker=firstBlockingSolid(z.x,z.y,player.x,player.y,pad);
++      if(!blocker){z.nav=null;}
++      else if(!z.nav || Math.hypot(z.nav.x-z.x,z.nav.y-z.y)<pad*1.5 || !lineClearMap(z.x,z.y,z.nav.x,z.nav.y,pad*.8)){
++        z.nav=chooseZombieDetour(z,blocker,pad);
++      }
++      z.navTimer=.16+Math.random()*.12;
++    }
++    let tx=player.x,ty=player.y;
++    if(z.nav){
++      if(Math.hypot(z.nav.x-z.x,z.nav.y-z.y)<pad*1.4)z.nav=null;
++      else{tx=z.nav.x;ty=z.nav.y}
++    }
++    let dx=tx-z.x,dy=ty-z.y,l=Math.hypot(dx,dy)||1;
++    return {x:dx/l,y:dy/l,pad};
++  }
++
++  function nearestVisibleEnemy(){
++    const nearest=[];
++    for(const z of state.zombies){
++      if(z.dead)continue;
++      const d=(z.x-player.x)**2+(z.y-player.y)**2;
++      let i=0;while(i<nearest.length&&nearest[i].d<d)i++;
++      if(i<8){nearest.splice(i,0,{z,d});if(nearest.length>8)nearest.pop()}
++    }
++    for(const c of nearest)if(lineClearMap(player.x,player.y,c.z.x,c.z.y,3))return c.z;
++    return null;
++  }
++
+   function currentBiome(){return getChunk(Math.floor(player.x/CHUNK),Math.floor(player.y/CHUNK)).biome}
+ 
+   const SAVE_KEY='undead_afterdark_v10_save';
+@@ -526,12 +630,12 @@
+         state:{
+           wave:state.wave,kills:state.kills,cash:state.cash,
+           upgrades:{...state.upgrades},perks:{...state.perks},owned:[...state.owned],
+-          inShop:!!state.inShop,waveFinished:!!state.waveFinished
++          inShop:!!state.inShop,waveFinished:!!state.waveFinished,autoFire:state.autoFire!==false
+         },
+         player:{
+           x:player.x,y:player.y,hp:player.hp,maxHp:player.maxHp,
+           armor:player.armor,maxArmor:player.maxArmor,baseSpeed:player.baseSpeed,
+-          weapon:player.weapon,ammo:player.ammo,aimX:player.aimX,aimY:player.aimY
++          weapon:player.weapon,ammo:player.ammo,aimX:player.aimX,aimY:player.aimY,stamina:player.stamina
+         }
+       };
+       localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+@@ -555,7 +659,7 @@
+       zombies:[],bullets:[],drops:[],particles:[],decals:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+       upgrades:{damage:0,fireRate:0,reload:0,mag:0,move:0,dash:0,...(sd.upgrades||{})},
+       perks:{pierce:false,vampire:false,runner:false,adrenaline:false,quick:false,heavy:false,doubleTap:false,...(sd.perks||{})},
+-      owned:Array.isArray(sd.owned)&&sd.owned.length?[...sd.owned]:['sidearm']
++      owned:Array.isArray(sd.owned)&&sd.owned.length?[...sd.owned]:['sidearm'],autoFire:sd.autoFire!==false,autoTarget:null,autoTargetTimer:0,manualAimHold:false,sprintHeld:false
+     });
+     Object.assign(player,{
+       x:Number.isFinite(pd.x)?pd.x:CHUNK/2,y:Number.isFinite(pd.y)?pd.y:CHUNK/2,
+@@ -564,7 +668,7 @@
+       baseSpeed:Number(pd.baseSpeed)||220,weapon:state.owned.includes(pd.weapon)?pd.weapon:'sidearm',
+       ammo:Math.max(0,Number(pd.ammo)||0),reloading:false,reloadTimer:0,fireCd:0,dashCd:0,dashTime:0,invuln:0,
+       aimX:Number.isFinite(pd.aimX)?pd.aimX:1,aimY:Number.isFinite(pd.aimY)?pd.aimY:0,
+-      animT:0,moveMag:0,shotKick:0,hurtAnim:0
++      animT:0,moveMag:0,shotKick:0,hurtAnim:0,stamina:Number.isFinite(pd.stamina)?Math.max(0,Math.min(100,pd.stamina)):100,maxStamina:100,staminaDelay:0
+     });
+     document.getElementById('startOverlay').style.display='none';
+     document.getElementById('gameOverOverlay').style.display='none';
+@@ -588,11 +692,11 @@
+       zombies:[],bullets:[],drops:[],particles:[],decals:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+       upgrades:{damage:0, fireRate:0, reload:0, mag:0, move:0, dash:0},
+       perks:{pierce:false, vampire:false, runner:false, adrenaline:false, quick:false, heavy:false, doubleTap:false},
+-      owned:['sidearm']
++      owned:['sidearm'],autoFire:true,autoTarget:null,autoTargetTimer:0,manualAimHold:false,sprintHeld:false
+     });
+     Object.assign(player,{
+       x:CHUNK/2,y:CHUNK/2,hp:100,maxHp:100,armor:0,maxArmor:0,
+-      weapon:'sidearm',ammo:12,reloading:false,reloadTimer:0,fireCd:0,dashCd:0,dashTime:0,invuln:0,animT:0,moveMag:0,shotKick:0,hurtAnim:0
++      weapon:'sidearm',ammo:12,reloading:false,reloadTimer:0,fireCd:0,dashCd:0,dashTime:0,invuln:0,animT:0,moveMag:0,shotKick:0,hurtAnim:0,stamina:100,maxStamina:100,staminaDelay:0
+     });
+     startWave();
+     saveGame(false);
+@@ -1048,14 +1152,7 @@
+     player.invuln=.25;
+   }
+ 
+-  function nearestEnemy(){
+-    let best=null,bd=Infinity;
+-    for(const z of state.zombies){
+-      const d=(z.x-player.x)**2+(z.y-player.y)**2;
+-      if(d<bd){bd=d;best=z}
+-    }
+-    return best;
+-  }
++  function nearestEnemy(){return nearestVisibleEnemy()}
+ 
+   function update(dt){
+     if(!state.running || state.paused) return;
+@@ -1083,18 +1180,31 @@
+     const ml=Math.hypot(mx,my)||1; mx/=ml; my/=ml;
+     player.moveMag=rawMove;
+     player.animT += dt*(rawMove>.03 ? 9.5+getSpeed()/55 : 2.2);
++    player.staminaDelay=Math.max(0,(player.staminaDelay||0)-dt);
++    const sprintWanted=(state.sprintHeld||state.keys['shift'])&&rawMove>.08&&player.stamina>0;
+     let sp=getSpeed();
++    if(sprintWanted){sp*=1.58;player.stamina=Math.max(0,player.stamina-dt*34);player.staminaDelay=.75}
++    else if(player.staminaDelay<=0){player.stamina=Math.min(player.maxStamina,player.stamina+dt*21)}
+     moveWithMapCollision(player,mx*sp*dt,my*sp*dt,player.r+3);
+ 
++    let manualShot=false;
+     if(state.mouse.down){
+       const dx=state.mouse.x-W/2,dy=state.mouse.y-H/2,l=Math.hypot(dx,dy)||1;
+-      player.aimX=dx/l;player.aimY=dy/l;shoot();
++      player.aimX=dx/l;player.aimY=dy/l;shoot();manualShot=true;
+     } else if(state.fireHeld){
+       if(state.fireAim.active){
+         const dx=state.fireAim.x,dy=state.fireAim.y,l=Math.hypot(dx,dy)||1;
+         player.aimX=dx/l;player.aimY=dy/l;
+       }
+-      shoot();
++      shoot();manualShot=true;
++    }
++    state.autoTargetTimer=Math.max(0,(state.autoTargetTimer||0)-dt);
++    if(state.autoFire!==false && !manualShot && !state.manualAimHold){
++      if(state.autoTargetTimer<=0 || !state.autoTarget || state.autoTarget.dead || !state.zombies.includes(state.autoTarget) || !lineClearMap(player.x,player.y,state.autoTarget.x,state.autoTarget.y,3)){
++        state.autoTarget=nearestVisibleEnemy();state.autoTargetTimer=.09;
++      }
++      const target=state.autoTarget;
++      if(target){const dx=target.x-player.x,dy=target.y-player.y,l=Math.hypot(dx,dy)||1;player.aimX=dx/l;player.aimY=dy/l;shoot()}
+     }
+ 
+     state.spawnTimer-=dt;
+@@ -1117,13 +1227,15 @@
+       z.hitCd=Math.max(0,z.hitCd-dt);
+       z.hitFlash=Math.max(0,(z.hitFlash||0)-dt);
+       z.attackAnim=Math.max(0,(z.attackAnim||0)-dt);
+-      const dx=player.x-z.x,dy=player.y-z.y,l=Math.hypot(dx,dy)||1;
+       const pursuitSpeed=z.speed*(z.catchup||1);
+-      const zx=dx/l*pursuitSpeed*dt, zy=dy/l*pursuitSpeed*dt;
++      const steer=zombieMoveVector(z,dt);
+       const oldZX=z.x,oldZY=z.y;
+-      moveWithMapCollision(z,zx,zy,Math.max(10,z.r*.55));
++      moveWithMapCollision(z,steer.x*pursuitSpeed*dt,steer.y*pursuitSpeed*dt,steer.pad);
+       const actualMove=Math.hypot(z.x-oldZX,z.y-oldZY);
+-      z.moveAmt=Math.min(1,actualMove/Math.max(.001,pursuitSpeed*dt));
++      const expected=Math.max(.001,pursuitSpeed*dt);
++      z.moveAmt=Math.min(1,actualMove/expected);
++      if(actualMove<expected*.18){z.stuckTime=(z.stuckTime||0)+dt}else z.stuckTime=Math.max(0,(z.stuckTime||0)-dt*2);
++      if(z.stuckTime>.42){z.nav=null;z.navTimer=0;z.navSide=-(z.navSide||1);z.stuckTime=0}
+       z.animT += dt*(1.2+(3.2+pursuitSpeed/42)*(.15+.85*z.moveAmt));
+       const touchDist=Math.hypot(player.x-z.x,player.y-z.y);
+       if(touchDist<z.r+player.r+2 && z.hitCd<=0 && player.invuln<=0){
+@@ -1191,6 +1303,10 @@
+     if(ui.waveMeter){const total=Math.max(1,state.spawnTarget),done=Math.max(0,total-remaining);ui.waveMeter.style.width=(Math.min(1,done/total)*100).toFixed(1)+'%'}
+     if(ui.hpFill) ui.hpFill.style.width=(Math.max(0,Math.min(1,player.hp/Math.max(1,player.maxHp)))*100).toFixed(1)+'%';
+     if(ui.armorFill) ui.armorFill.style.width=(Math.max(0,Math.min(1,player.armor/Math.max(1,player.maxArmor||1)))*100).toFixed(1)+'%';
++    if(ui.stamTxt) ui.stamTxt.textContent=Math.round(player.stamina)+'%';
++    if(ui.sprintBtn) ui.sprintBtn.classList.toggle('held',!!state.sprintHeld);
++    if(ui.autoTxt) ui.autoTxt.textContent=state.autoFire===false?'OFF':'ON';
++    if(ui.autoFireBtn) ui.autoFireBtn.classList.toggle('off',state.autoFire===false);
+     if(state.inShop) ui.shopCash.textContent='$'+state.cash;
+   }
+ 
+@@ -1591,14 +1707,14 @@
+     return l;
+   };
+   const resetMove=()=>{moveTouchId=null;state.joy={x:0,y:0,active:false}};
+-  const resetFire=()=>{fireTouchId=null;state.fireHeld=false;state.fireAim.active=false};
++  const resetFire=()=>{fireTouchId=null;state.fireHeld=false;state.fireAim.active=false;state.manualAimHold=false};
+ 
+   canvas.addEventListener('touchstart',e=>{
+     if(!state.running||state.paused)return;e.preventDefault();
+     for(const t of e.changedTouches){
+       if(t.clientY<70)continue;
+       if(t.clientX<W*.48&&moveTouchId===null){moveTouchId=t.identifier;moveOriginX=t.clientX;moveOriginY=t.clientY;state.joy={x:0,y:0,active:true}}
+-      else if(t.clientX>W*.52&&fireTouchId===null){fireTouchId=t.identifier;fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=false;state.fireAim.active=false}
++      else if(t.clientX>W*.52&&fireTouchId===null){fireTouchId=t.identifier;fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=false;state.fireAim.active=false;state.manualAimHold=true}
+     }
+   },{passive:false});
+ 
+@@ -1612,6 +1728,18 @@
+   canvas.addEventListener('touchend',e=>{e.preventDefault();finishTouches(e)},{passive:false});
+   canvas.addEventListener('touchcancel',e=>{e.preventDefault();finishTouches(e)},{passive:false});
+ 
++  const sprintBtn=document.getElementById('sprintBtn');
++  if(sprintBtn){
++    const sprintOn=e=>{e.preventDefault();e.stopPropagation();if(state.running&&!state.paused){state.sprintHeld=true;sprintBtn.classList.add('held')}};
++    const sprintOff=e=>{if(e){e.preventDefault();e.stopPropagation()}state.sprintHeld=false;sprintBtn.classList.remove('held')};
++    sprintBtn.addEventListener('pointerdown',sprintOn,{passive:false});
++    sprintBtn.addEventListener('pointerup',sprintOff,{passive:false});
++    sprintBtn.addEventListener('pointercancel',sprintOff,{passive:false});
++    sprintBtn.addEventListener('pointerleave',e=>{if(e.buttons===0)sprintOff(e)},{passive:false});
++  }
++  const autoFireBtn=document.getElementById('autoFireBtn');
++  if(autoFireBtn) autoFireBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();state.autoFire=state.autoFire===false;state.autoTarget=null;state.autoTargetTimer=0;syncUI();saveGame(false)},{passive:false});
++
+   document.getElementById('continueBtn').onclick=()=>loadSavedRun();
+   document.getElementById('startBtn').onclick=()=>{
+     document.getElementById('startOverlay').style.display='none';
