@@ -28,4 +28,117 @@ jobs:
           check payload/v14/n00.txt e23a25f23ec9b57c0ddc2d4a0c586270979759d2c07d06fe011a6c7c69859126
           check payload/v14/n01.txt f9f034bbd2317b549efce188541b3946708f524257195bfebba1ee95578b2af3
           check payload/v14/n02.txt d95b580c45044aaca35d4a65339ba92eb7c24bbae8a1cd2b41ccdbe71af6c601
-          check payload/v14/n03.txt fbcbe584bc45044aaca35d4a65339ba92eb7c24bbae8a1cd2b41ccdbe71af6c601
+          check payload/v14/n03.txt fbcbe584bc3ce1ae4b0a3afdd5dc101e729ad0d400ba9a19ee1e947fbfd8833e
+          check payload/v14/n04.txt 33370fb961d99326df2e4ecb608364988a1ed9c3a730d0ff7400275cde251677
+
+      - name: Rebuild V14 base
+        shell: bash
+        run: |
+          mkdir -p site
+          cat payload/v14/n*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
+          gzip -dc site/game.gz > site/index.html
+          rm site/game.gz
+          echo 'ab71ab29eca53a183b34bcd0e25211b6ea5f223e7a00c3de68f5b844426fe289  site/index.html' | sha256sum -c -
+
+      - name: Apply V15 apocalypse shop
+        shell: bash
+        run: |
+          patch --batch --forward site/index.html < tools/v15.patch
+          echo 'aff27b721899a6344f6eb44f22e4c9a8b7a9832e7cfc5c147d03ea190e36d10c  site/index.html' | sha256sum -c -
+
+      - name: Apply V16 navigation combat controls
+        shell: bash
+        run: |
+          echo 'c6e8257f660c9ec3ccf163d157c242157810ca598c0a712f0f56503032f78843  tools/v16.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v16.patch
+          echo 'f022eb4cd66edeab285e8321b6f1f0dfb7ca107e8afd4d84badb5b3f79b4ff76  site/index.html' | sha256sum -c -
+
+      - name: Apply V17 emergency auto-fire
+        shell: bash
+        run: |
+          echo 'bc3db739e15e2400734bc0b792145835f50710f7778d17ef3e2b46a7087128d7  tools/v17.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v17.patch
+          echo 'bddb4b7ff78b5549c9f59835d97e588d6cd72ce01c4b51ea9e0187b7d3c2836b  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V18 art update
+        shell: bash
+        run: |
+          patch --batch --forward site/index.html < tools/v18.patch
+          echo '6d2d582c06d3254ddd66fb8934a02d5576c2693ebb6a1acabb82e1a575d72206  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V19 sound update
+        shell: bash
+        run: |
+          patch --batch --forward site/index.html < tools/v19.patch
+          echo '1f23a15314ebe93b7dc76789e3a1edcb8280a639684d668f155cf76dbd32a533  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V20 real audio
+        shell: bash
+        run: |
+          echo 'eda6e35d2870c44bdb2a5cf7cd5f70d433426b850d3f4270083b31cc9fdb14f2  tools/v20.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v20.patch
+          echo '74f0d4500545289192590f04ac15d854fb9bd41092c3cd23c19185fc1608c59a  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V21 infected variety and title screen
+        shell: bash
+        run: |
+          echo '2cb08bc4a56935583af1689fadc953a9c4b09ea3efb92717e23a5ff253ab6394  tools/v21.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v21.patch
+          echo 'd638ca4f091836d8fe488f9deb523b691c4b9583f3642f675258425f69e0b03b  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V22 handgun and organic world
+        shell: bash
+        run: |
+          echo 'b988c8d497298c67ccf5c3a641e59c1ade9038e1c73667798c6dfd40c61485d8  tools/v22.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v22.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v22.patch
+          patch --batch --forward site/index.html < /tmp/v22.patch
+          echo 'c9b14e2b6bfc1fa8335de18abf2250ea38376ed33f42cbbeb3790fa4afcbe294  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V23 fortifications and special infected
+        shell: bash
+        run: |
+          echo '136dfbc53c446aedf66d61871722a2f0d133678916f5644d6fa629c69659a8df  tools/v23.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v23.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v23.patch
+          patch --batch --forward site/index.html < /tmp/v23.patch
+          echo '1ddf31c438ea8c895f1c1afe10081ae07463db48a4730bb507549c126d34b995  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V24 pathfinding, kill cash, and speed
+        shell: bash
+        run: |
+          echo 'ba30fd1f6017ae7eb98f445a75ed637bc872c6f964888f89ca98c6e5c371fffe  tools/v24.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v24.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v24.patch
+          patch --batch --forward site/index.html < /tmp/v24.patch
+          echo 'b5d922ae29615360a7b5342460ac889d787618ddc1314fbfd22c8c41c56cccd8  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V25 imported models
+        shell: bash
+        run: |
+          echo '3ffcb4bceec2e35a0c0486b62ab5ba6d7151eacab43ab58406d1c220ae51e3c5  tools/v25.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v25.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v25.patch
+          patch --batch --forward site/index.html < /tmp/v25.patch
+          echo '6e480b6bd5ab6ab2672d0c232034c83efe76832fe7a0706a5c256e8a14a2837d  site/index.html' | sha256sum -c -
+          mkdir -p site/assets/models
+          tr -d '[:space:]' < assets/models/v25_atlas.webp.b64 | base64 --decode > site/assets/models/v25_atlas.webp
+          echo '79cbb2b3e25beaf710524e7ede8d95b7a99fd3390e81067c76fa00fa0b6a4c04  site/assets/models/v25_atlas.webp' | sha256sum -c -
+          touch site/.nojekyll
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
