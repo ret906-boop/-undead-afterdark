@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V23
+name: Deploy Undead Afterdark V24
 
 on:
   push:
@@ -101,6 +101,14 @@ jobs:
           tr -d '[:space:]' < tools/v23.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v23.patch
           patch --batch --forward site/index.html < /tmp/v23.patch
           echo '1ddf31c438ea8c895f1c1afe10081ae07463db48a4730bb507549c126d34b995  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V24 pathfinding, kill cash, and speed
+        shell: bash
+        run: |
+          echo 'ba30fd1f6017ae7eb98f445a75ed637bc872c6f964888f89ca98c6e5c371fffe  tools/v24.patch.gz.b64' | sha256sum -c -
+          tr -d '[:space:]' < tools/v24.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v24.patch
+          patch --batch --forward site/index.html < /tmp/v24.patch
+          echo 'b5d922ae29615360a7b5342460ac889d787618ddc1314fbfd22c8c41c56cccd8  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
