@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V20
+name: Deploy Undead Afterdark V21
 
 on:
   push:
@@ -78,6 +78,13 @@ jobs:
           echo 'eda6e35d2870c44bdb2a5cf7cd5f70d433426b850d3f4270083b31cc9fdb14f2  tools/v20.patch' | sha256sum -c -
           patch --batch --forward site/index.html < tools/v20.patch
           echo '74f0d4500545289192590f04ac15d854fb9bd41092c3cd23c19185fc1608c59a  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V21 infected variety and title screen
+        shell: bash
+        run: |
+          echo '2cb08bc4a56935583af1689fadc953a9c4b09ea3efb92717e23a5ff253ab6394  tools/v21.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v21.patch
+          echo 'd638ca4f091836d8fe488f9deb523b691c4b9583f3642f675258425f69e0b03b  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
