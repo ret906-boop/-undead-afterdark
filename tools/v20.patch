@@ -1,0 +1,116 @@
+--- /mnt/data/undead_afterdark_v19_sound.html	2026-09-20 21:41:59.807852721 +0000
++++ /mnt/data/undead_afterdark_v20_real_audio.html	2026-09-20 21:44:01.633857330 +0000
+@@ -390,11 +390,57 @@
+   };
+ 
+ 
+-  // Lightweight procedural audio. No external files, so mobile loads stay tiny.
++  // V20 real-sample audio layer. Gunshots are CC0 firearm recordings and zombie calls are CC0 mic-recorded vocal samples.
++  // Sources: OpenGameArt Gunshots by kurt; Zomby sfx pack by saturn91.
+   const SOUND_PREF_KEY='undead_afterdark_sound_enabled';
+   let soundEnabled=localStorage.getItem(SOUND_PREF_KEY)!=='off';
+   let audioCtx=null, masterGain=null, ambienceGain=null;
+   let ambientSfxTimer=1.8, footstepTimer=0;
++
++  const REAL_AUDIO_URLS={
++    sidearm:'https://opengameart.org/sites/default/files/22%20Pistol.wav',
++    smg:'https://opengameart.org/sites/default/files/22%20Pistol.wav',
++    rifle:'https://opengameart.org/sites/default/files/22%20Magnum.wav',
++    shotgun:'https://opengameart.org/sites/default/files/Black%20Powder.wav',
++    combat:'https://opengameart.org/sites/default/files/Black%20Powder.wav',
++    lmg:'https://opengameart.org/sites/default/files/Unkown.wav',
++    zombies:[
++      'https://opengameart.org/sites/default/files/01_zombey.mp3',
++      'https://opengameart.org/sites/default/files/02_zombey.mp3',
++      'https://opengameart.org/sites/default/files/03_zombey.mp3',
++      'https://opengameart.org/sites/default/files/04_zombey_0.mp3'
++    ]
++  };
++  const realAudioPools=new Map(), realAudioIndex=new Map();
++  function buildAudioPool(url,size=6){
++    if(realAudioPools.has(url))return realAudioPools.get(url);
++    const arr=[];
++    for(let i=0;i<size;i++){
++      const a=new Audio();a.preload='auto';a.src=url;a.volume=.001;
++      try{a.load()}catch(e){}
++      arr.push(a);
++    }
++    realAudioPools.set(url,arr);realAudioIndex.set(url,0);return arr;
++  }
++  function preloadRealAudio(){
++    for(const k of ['sidearm','smg','rifle','shotgun','combat','lmg'])buildAudioPool(REAL_AUDIO_URLS[k],k==='smg'||k==='lmg'?8:5);
++    for(const url of REAL_AUDIO_URLS.zombies)buildAudioPool(url,3);
++  }
++  function playRealAudio(url,volume=.5,rate=1,maxSeconds=0,offset=0,onFail=null){
++    if(!soundEnabled||!url)return false;
++    try{
++      const pool=buildAudioPool(url,6),idx=realAudioIndex.get(url)||0,a=pool[idx%pool.length];
++      realAudioIndex.set(url,(idx+1)%pool.length);
++      try{a.pause();a.currentTime=offset}catch(e){}
++      a.volume=Math.max(0,Math.min(1,volume));
++      a.playbackRate=Math.max(.55,Math.min(1.6,rate));
++      const p=a.play();
++      if(p&&p.catch)p.catch(()=>{if(onFail)onFail()});
++      if(maxSeconds>0)setTimeout(()=>{try{a.pause()}catch(e){}},maxSeconds*1000);
++      return true;
++    }catch(e){if(onFail)onFail();return false}
++  }
++  preloadRealAudio();
+   function ensureAudio(){
+     if(!soundEnabled) return null;
+     try{
+@@ -427,19 +473,28 @@
+   }
+   function sfxShot(w){
+     if(!soundEnabled)return;
+-    const cfg={
+-      sidearm:[95,.08,.16,1500],smg:[120,.055,.105,1900],shotgun:[62,.14,.27,900],rifle:[86,.075,.17,1650],combat:[70,.11,.22,1050],lmg:[73,.085,.20,1250]
+-    }[w]||[95,.08,.15,1400];
+-    noiseBurst(cfg[1],cfg[2],cfg[3],'lowpass');tone(cfg[0],cfg[1]*1.25,cfg[2]*.52,'square',.45);
+-    if(w==='shotgun'||w==='combat'){noiseBurst(.18,.10,260,'lowpass',.015);tone(44,.16,.08,'sine',.65,.01)}
+-    else tone(cfg[0]*2.4,.035,.025,'triangle',.7,.005);
++    const url=REAL_AUDIO_URLS[w]||REAL_AUDIO_URLS.sidearm;
++    const vol={sidearm:.58,smg:.38,shotgun:.88,rifle:.68,combat:.78,lmg:.46}[w]||.55;
++    const cut={sidearm:.58,smg:.40,shotgun:.95,rifle:.72,combat:.80,lmg:.44}[w]||.60;
++    const rateBase={sidearm:1.04,smg:1.12,shotgun:.90,rifle:.96,combat:.95,lmg:1.02}[w]||1;
++    const rate=rateBase*(.975+Math.random()*.05);
++    const fallback=()=>{
++      const cfg={sidearm:[95,.08,.13,1500],smg:[120,.055,.085,1900],shotgun:[62,.14,.20,900],rifle:[86,.075,.14,1650],combat:[70,.11,.17,1050],lmg:[73,.085,.15,1250]}[w]||[95,.08,.13,1400];
++      noiseBurst(cfg[1],cfg[2],cfg[3],'lowpass');tone(cfg[0],cfg[1]*1.25,cfg[2]*.42,'square',.45);
++    };
++    playRealAudio(url,vol,rate,cut,0,fallback);
++    // Tiny sub-bass punch keeps the recorded shot readable through phone speakers without replacing the real sample.
++    if(w==='shotgun'||w==='combat')tone(48,.10,.025,'sine',.68);
+   }
+   function sfxReloadStart(){tone(680,.035,.045,'square',.75);tone(390,.045,.035,'triangle',.75,.055)}
+   function sfxReloadEnd(){tone(420,.035,.04,'square',1.18);tone(720,.025,.035,'triangle',.9,.045)}
+   function sfxHit(){noiseBurst(.045,.035,700,'bandpass');tone(115,.035,.025,'sine',.72)}
+   function sfxKill(z){
+-    noiseBurst(z&&z.boss?.19:(z&&z.kind==='brute'?.13:.085),z&&z.boss?.14:.065,z&&z.boss?330:470,'lowpass');
+-    tone(z&&z.boss?48:(z&&z.kind==='brute'?62:82),z&&z.boss?.26:.11,z&&z.boss?.11:.045,'sawtooth',.55);
++    const pool=REAL_AUDIO_URLS.zombies;
++    const url=pool[Math.floor(Math.random()*pool.length)];
++    const rate=z&&z.boss?.72:(z&&z.kind==='brute'?.82:(z&&z.kind==='runner'?1.16:(.92+Math.random()*.14)));
++    playRealAudio(url,z&&z.boss?.46:.26,rate,z&&z.boss?1.8:1.05,0,null);
++    noiseBurst(z&&z.boss?.16:(z&&z.kind==='brute'?.11:.065),z&&z.boss?.08:.035,z&&z.boss?300:450,'lowpass');
+   }
+   function sfxHurt(){noiseBurst(.10,.095,430,'lowpass');tone(76,.15,.075,'sawtooth',.7)}
+   function sfxPickup(type){
+@@ -452,8 +507,15 @@
+   function sfxBuy(){tone(460,.04,.035,'square',1.1);tone(670,.05,.035,'triangle',1.15,.045)}
+   function sfxGameOver(){tone(150,.22,.08,'sawtooth',.65);tone(88,.45,.07,'sine',.45,.17)}
+   function sfxGrowl(z){
+-    const base=z&&z.kind==='runner'?125:(z&&z.kind==='brute'?62:(z&&z.boss?48:82));
+-    noiseBurst(.24,z&&z.boss?.06:.028,430,'lowpass',0,ambienceGain);tone(base,.28,z&&z.boss?.05:.022,'sawtooth',.72,0,ambienceGain);
++    if(!soundEnabled)return;
++    const pool=REAL_AUDIO_URLS.zombies;
++    const url=pool[Math.floor(Math.random()*pool.length)];
++    let rate=z&&z.kind==='runner'?1.14:(z&&z.kind==='brute'?.78:(z&&z.boss?.67:(.90+Math.random()*.18)));
++    let vol=z&&z.boss?.42:(z&&z.kind==='brute'?.32:.24);
++    playRealAudio(url,vol,rate,z&&z.boss?2.4:1.65,0,()=>{
++      const base=z&&z.kind==='runner'?125:(z&&z.kind==='brute'?62:(z&&z.boss?48:82));
++      noiseBurst(.22,z&&z.boss?.05:.022,430,'lowpass',0,ambienceGain);tone(base,.26,z&&z.boss?.04:.018,'sawtooth',.72,0,ambienceGain);
++    });
+   }
+   function sfxStep(sprinting=false){noiseBurst(.035,sprinting?.026:.015,sprinting?260:210,'lowpass');tone(sprinting?72:60,.03,sprinting?.014:.008,'sine',.7)}
+   function refreshSoundButton(){if(!ui.soundBtn)return;ui.soundBtn.textContent=soundEnabled?'SOUND ON':'SOUND OFF';ui.soundBtn.classList.toggle('off',!soundEnabled)}

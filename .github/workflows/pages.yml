@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V19
+name: Deploy Undead Afterdark V20
 
 on:
   push:
@@ -71,6 +71,13 @@ jobs:
         run: |
           patch --batch --forward site/index.html < tools/v19.patch
           echo '1f23a15314ebe93b7dc76789e3a1edcb8280a639684d668f155cf76dbd32a533  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V20 real audio
+        shell: bash
+        run: |
+          echo 'eda6e35d2870c44bdb2a5cf7cd5f70d433426b850d3f4270083b31cc9fdb14f2  tools/v20.patch' | sha256sum -c -
+          patch --batch --forward site/index.html < tools/v20.patch
+          echo '74f0d4500545289192590f04ac15d854fb9bd41092c3cd23c19185fc1608c59a  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
