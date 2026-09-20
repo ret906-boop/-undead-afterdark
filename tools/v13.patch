@@ -1,0 +1,267 @@
+--- old/index.html
++++ new/index.html
+@@ -463,7 +463,7 @@
+     if(!state.running && !state.inShop) return false;
+     try{
+       const data={
+-        v:12,savedAt:Date.now(),
++        v:13,savedAt:Date.now(),
+         state:{
+           wave:state.wave,kills:state.kills,cash:state.cash,
+           upgrades:{...state.upgrades},perks:{...state.perks},owned:[...state.owned],
+@@ -776,38 +776,41 @@
+ 
+ 
+   function makeDrop(type,x,y,value=0,boss=false){
+-    const jitter=boss?34:18;
++    const jitter=boss?38:22;
+     state.drops.push({
+       type,
+       x:x+(Math.random()-.5)*jitter,
+       y:y+(Math.random()-.5)*jitter,
+       value,
+-      r:boss?16:13,
+-      life:boss?30:20,
+-      maxLife:boss?30:20,
++      r:boss?18:15,
++      life:boss?32:18,
++      maxLife:boss?32:18,
+       boss,
+-      phase:Math.random()*Math.PI*2
++      phase:Math.random()*Math.PI*2,
++      spin:(Math.random()-.5)*.8
+     });
+   }
+ 
+   function spawnZombieDrops(z){
+     if(z.boss){
+-      makeDrop('money',z.x-24,z.y,500+state.wave*25,true);
+-      makeDrop('health',z.x+24,z.y-8,50,true);
+-      makeDrop('ammo',z.x,z.y+26,1,true);
++      makeDrop('money',z.x-18,z.y,550+state.wave*30,true);
++      const support=Math.random()<.55?'ammo':'health';
++      makeDrop(support,z.x+20,z.y+6,support==='health'?55:1,true);
+       return;
+     }
+-    // Independent rolls let a lucky kill spit out more than one useful pickup.
+-    if(Math.random()<.65) makeDrop('money',z.x,z.y,18+state.wave*2,false);
+-    if(Math.random()<.20) makeDrop('ammo',z.x,z.y,1,false);
+-    if(Math.random()<.15) makeDrop('health',z.x,z.y,25,false);
++    // Normal infected now drop something only occasionally, and never shower the floor with three pickups.
++    if(Math.random()>.27) return;
++    const roll=Math.random();
++    if(roll<.58) makeDrop('money',z.x,z.y,28+state.wave*3,false);
++    else if(roll<.82) makeDrop('ammo',z.x,z.y,1,false);
++    else makeDrop('health',z.x,z.y,30,false);
+   }
+ 
+   function updateDrops(dt){
+     for(const d of state.drops){
+       d.life-=dt;
+       const dx=player.x-d.x,dy=player.y-d.y;
+-      const close=dx*dx+dy*dy < (player.r+d.r+12)*(player.r+d.r+12);
++      const close=dx*dx+dy*dy < (player.r+d.r+14)*(player.r+d.r+14);
+       if(!close) continue;
+ 
+       if(d.type==='money'){
+@@ -831,12 +834,41 @@
+     state.drops=state.drops.filter(d=>d.life>0);
+   }
+ 
+-  function bloodBurst(x,y,count=5,power=95){
+-    for(let i=0;i<count;i++){
+-      const a=Math.random()*Math.PI*2,sp=20+Math.random()*power;
+-      state.particles.push({type:'blood',x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:.28+Math.random()*.45,max:.7,r:1.8+Math.random()*3.4});
++  function bloodBurst(x,y,count=5,power=95,dirX=0,dirY=0){
++    const directed=Math.hypot(dirX,dirY)>.01;
++    const baseA=directed?Math.atan2(dirY,dirX):0;
++    const actualCount=Math.max(2,Math.round(count*(.72+Math.random()*.72)));
++    for(let i=0;i<actualCount;i++){
++      const a=directed
++        ? baseA + (Math.random()-.5)*(1.05+Math.random()*.75)
++        : Math.random()*Math.PI*2;
++      const sp=(10+Math.random()*power)*(Math.random()<.16?1.55:1);
++      state.particles.push({
++        type:'blood',x:x+(Math.random()-.5)*5,y:y+(Math.random()-.5)*5,
++        vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
++        life:.22+Math.random()*.58,max:.80,
++        r:1.2+Math.random()*4.8*(Math.random()<.22?1.5:1)
++      });
+     }
+   }
++  function addBloodDecals(z){
++    const pools=z.boss?7:(z.kind==='brute'?5:3+Math.floor(Math.random()*3));
++    const base=Math.atan2(player.y-z.y,player.x-z.x)+Math.PI;
++    for(let i=0;i<pools;i++){
++      const a=base+(Math.random()-.5)*2.5;
++      const dist=Math.random()*z.r*(z.boss?1.7:1.25);
++      const big=i===0;
++      state.decals.push({
++        x:z.x+Math.cos(a)*dist,y:z.y+Math.sin(a)*dist,
++        rx:z.r*(big?(.48+Math.random()*.65):(.10+Math.random()*.30)),
++        ry:z.r*(big?(.20+Math.random()*.35):(.06+Math.random()*.18)),
++        rot:Math.random()*Math.PI,
++        alpha:(big?.18:.12)+Math.random()*(big?.23:.18)
++      });
++    }
++    if(state.decals.length>180) state.decals.splice(0,state.decals.length-180);
++  }
++
+   function muzzleFX(){
+     const x=player.x+player.aimX*34,y=player.y+player.aimY*34;
+     state.particles.push({type:'flash',x,y,vx:0,vy:0,life:.07,max:.07,r:9});
+@@ -994,12 +1026,11 @@
+           z.hp-=b.damage;
+           z.hitFlash=.09;
+           state.hitMarker=.09;
+-          bloodBurst(b.x,b.y,z.kind==='brute'?6:4,85);
++          {const bl=Math.hypot(b.vx,b.vy)||1;bloodBurst(b.x,b.y,z.kind==='brute'?6:4,85,b.vx/bl,b.vy/bl);}
+           if(z.hp<=0){
+             z.dead=true;
+             bloodBurst(z.x,z.y,z.boss?24:(z.kind==='brute'?14:9),z.boss?190:125);
+-            state.decals.push({x:z.x+(Math.random()-.5)*8,y:z.y+(Math.random()-.5)*8,rx:z.r*(.65+Math.random()*.45),ry:z.r*(.28+Math.random()*.22),rot:Math.random()*Math.PI,alpha:.24+Math.random()*.18});
+-            if(state.decals.length>140) state.decals.splice(0,state.decals.length-140);
++            addBloodDecals(z);
+             state.screenShake=Math.max(state.screenShake,z.boss?1.5:(z.kind==='brute'?.75:.35));
+             state.kills++;
+             spawnZombieDrops(z);
+@@ -1308,32 +1339,46 @@
+     for(const b of state.bullets){ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill()}
+     drawParticles();
+ 
+-    // loot drops
++    // Rarer pickups now read as deliberate loot instead of generic floor confetti.
+     const now=performance.now()*.004;
+     for(const d of state.drops){
+-      const pulse=1+Math.sin(now+d.phase)*.08;
+-      const alpha=Math.min(1,d.life<4?d.life/4:1);
++      const pulse=1+Math.sin(now+d.phase)*.055;
++      const bob=Math.sin(now*1.35+d.phase)*2.4;
++      const alpha=Math.min(1,d.life<3.5?d.life/3.5:1);
++      const col=d.type==='money'?'255,214,78':(d.type==='health'?'255,76,82':'88,172,255');
+       ctx.save();
+       ctx.globalAlpha=alpha;
+-      ctx.translate(d.x,d.y);
+-      ctx.scale(pulse,pulse);
+-      ctx.fillStyle='rgba(0,0,0,.28)';
+-      ctx.beginPath();ctx.ellipse(0,d.r*.85,d.r*1.05,d.r*.42,0,0,Math.PI*2);ctx.fill();
++      ctx.translate(d.x,d.y+bob);
+ 
++      // soft vertical beacon and ground ring
++      const beam=ctx.createLinearGradient(0,-d.r*3.4,0,d.r*.4);
++      beam.addColorStop(0,`rgba(${col},0)`);beam.addColorStop(.72,`rgba(${col},.07)`);beam.addColorStop(1,`rgba(${col},.28)`);
++      ctx.fillStyle=beam;ctx.fillRect(-d.r*.55,-d.r*3.4,d.r*1.1,d.r*3.8);
++      ctx.strokeStyle=`rgba(${col},${d.boss?.65:.38})`;ctx.lineWidth=d.boss?2.2:1.4;
++      ctx.beginPath();ctx.ellipse(0,d.r*.88,d.r*1.18,d.r*.42,0,0,Math.PI*2);ctx.stroke();
++
++      ctx.scale(pulse,pulse);
++      ctx.shadowColor=`rgba(${col},.55)`;ctx.shadowBlur=d.boss?16:9;
+       if(d.type==='money'){
+-        ctx.fillStyle=d.boss?'#ffe56b':'#e0bd47';
+-        ctx.beginPath();ctx.roundRect(-d.r,-d.r*.72,d.r*2,d.r*1.44,4);ctx.fill();
+-        ctx.fillStyle='#384724';ctx.font=`900 ${Math.max(12,d.r)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,0);
++        ctx.fillStyle=d.boss?'#ffe478':'#e3bd45';
++        ctx.beginPath();ctx.roundRect(-d.r*.92,-d.r*.58,d.r*1.84,d.r*1.16,5);ctx.fill();
++        ctx.strokeStyle='rgba(74,58,12,.65)';ctx.lineWidth=2;ctx.stroke();
++        ctx.fillStyle='#4b431d';ctx.font=`900 ${Math.max(12,d.r*.9)}px system-ui`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,0);
+       }else if(d.type==='health'){
+-        ctx.fillStyle=d.boss?'#ff5656':'#d94747';
+-        ctx.beginPath();ctx.roundRect(-d.r,-d.r,d.r*2,d.r*2,5);ctx.fill();
+-        ctx.fillStyle='#fff';ctx.fillRect(-d.r*.2,-d.r*.65,d.r*.4,d.r*1.3);ctx.fillRect(-d.r*.65,-d.r*.2,d.r*1.3,d.r*.4);
++        ctx.fillStyle=d.boss?'#ff6268':'#d94a50';
++        ctx.beginPath();ctx.roundRect(-d.r*.78,-d.r*.78,d.r*1.56,d.r*1.56,5);ctx.fill();
++        ctx.fillStyle='rgba(255,255,255,.95)';ctx.fillRect(-d.r*.16,-d.r*.52,d.r*.32,d.r*1.04);ctx.fillRect(-d.r*.52,-d.r*.16,d.r*1.04,d.r*.32);
++        ctx.strokeStyle='rgba(80,10,14,.55)';ctx.lineWidth=2;ctx.strokeRect(-d.r*.78,-d.r*.78,d.r*1.56,d.r*1.56);
+       }else{
+-        ctx.fillStyle=d.boss?'#63b9ff':'#4f86b7';
+-        ctx.beginPath();ctx.roundRect(-d.r,-d.r*.82,d.r*2,d.r*1.64,5);ctx.fill();
+-        ctx.fillStyle='#dbeeff';
+-        for(let i=-1;i<=1;i++) ctx.fillRect(i*d.r*.42-d.r*.10,-d.r*.46,d.r*.2,d.r*.92);
++        ctx.fillStyle=d.boss?'#78c9ff':'#4f8fc7';
++        ctx.beginPath();ctx.roundRect(-d.r*.90,-d.r*.60,d.r*1.80,d.r*1.20,5);ctx.fill();
++        ctx.fillStyle='#dcefff';
++        for(let i=-1;i<=1;i++){
++          ctx.beginPath();ctx.roundRect(i*d.r*.42-d.r*.09,-d.r*.42,d.r*.18,d.r*.84,2);ctx.fill();
++        }
+       }
++      ctx.shadowBlur=0;
++      if(d.boss){ctx.strokeStyle=`rgba(${col},.82)`;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(0,0,d.r*1.15,0,Math.PI*2);ctx.stroke();}
+       ctx.restore();
+     }
+ 
+@@ -1419,10 +1464,11 @@
+   canvas.addEventListener('mousedown',e=>{if(e.button===0){state.mouse.down=true;state.mouse.x=e.clientX;state.mouse.y=e.clientY}});
+   addEventListener('mouseup',()=>state.mouse.down=false);
+ 
+-  // Mobile controls: invisible twin-stick zones directly on the canvas.
+-  // Left thumb moves. Right thumb aims/fires. No on-screen circles or dash button.
++  // Mobile controls: left thumb moves. Right thumb can aim without firing.
++  // Drag = face/aim only. Tap = one shot. Hold still = automatic fire.
+   let moveTouchId=null, fireTouchId=null;
+   let moveOriginX=0, moveOriginY=0, fireOriginX=0, fireOriginY=0;
++  let fireTouchStarted=0, fireTouchMoved=false, fireHoldTimer=null;
+   const byId=(list,id)=>{
+     if(id===null||!list)return null;
+     for(let i=0;i<list.length;i++) if(list[i].identifier===id) return list[i];
+@@ -1439,14 +1485,18 @@
+   const setAimFromTouch=t=>{
+     let dx=t.clientX-fireOriginX,dy=t.clientY-fireOriginY;
+     const l=Math.hypot(dx,dy);
+-    if(l>10){
++    if(l>9){
+       dx/=l;dy/=l;
+       state.fireAim={x:dx,y:dy,active:true};
+       player.aimX=dx;player.aimY=dy;
+     }
++    return l;
+   };
+   const resetMove=()=>{moveTouchId=null;state.joy={x:0,y:0,active:false}};
+-  const resetFire=()=>{fireTouchId=null;state.fireHeld=false;state.fireAim.active=false};
++  const resetFire=()=>{
++    if(fireHoldTimer){clearTimeout(fireHoldTimer);fireHoldTimer=null}
++    fireTouchId=null;state.fireHeld=false;state.fireAim.active=false;fireTouchMoved=false;
++  };
+ 
+   canvas.addEventListener('touchstart',e=>{
+     if(!state.running||state.paused)return;
+@@ -1458,9 +1508,11 @@
+         state.joy={x:0,y:0,active:true};
+       }else if(t.clientX>W*.52 && fireTouchId===null){
+         fireTouchId=t.identifier;fireOriginX=t.clientX;fireOriginY=t.clientY;
+-        state.fireHeld=true;
+-        // A tap fires in the current facing direction; dragging changes aim.
+-        setAimFromTouch(t);
++        fireTouchStarted=performance.now();fireTouchMoved=false;state.fireHeld=false;
++        const thisId=t.identifier;
++        fireHoldTimer=setTimeout(()=>{
++          if(fireTouchId===thisId && !fireTouchMoved) state.fireHeld=true;
++        },190);
+       }
+     }
+   },{passive:false});
+@@ -1469,12 +1521,23 @@
+     if(!state.running||state.paused)return;
+     e.preventDefault();
+     const mt=byId(e.touches,moveTouchId);if(mt)setMoveFromTouch(mt);
+-    const ft=byId(e.touches,fireTouchId);if(ft)setAimFromTouch(ft);
++    const ft=byId(e.touches,fireTouchId);
++    if(ft){
++      const dist=setAimFromTouch(ft);
++      if(dist>11){
++        fireTouchMoved=true;state.fireHeld=false;
++        if(fireHoldTimer){clearTimeout(fireHoldTimer);fireHoldTimer=null}
++      }
++    }
+   },{passive:false});
+ 
+   const finishTouches=e=>{
+     if(changedHas(e,moveTouchId))resetMove();
+-    if(changedHas(e,fireTouchId))resetFire();
++    if(changedHas(e,fireTouchId)){
++      const elapsed=performance.now()-fireTouchStarted;
++      if(!fireTouchMoved && elapsed<190) shoot();
++      resetFire();
++    }
+   };
+   canvas.addEventListener('touchend',e=>{e.preventDefault();finishTouches(e)},{passive:false});
+   canvas.addEventListener('touchcancel',e=>{e.preventDefault();finishTouches(e)},{passive:false});
