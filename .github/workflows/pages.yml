@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V12
+name: Deploy Undead Afterdark V13
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
           check payload/v12/m03.txt 4f8c76a9b4ac536dc63cea11935bdc78319a4ca1bf92872acb52cba8b979998d
           check payload/v12/m04.txt b684b63fec76b66a8b40ddd9166aa289dba150bbd2b56fccce163e04c6376e86
 
-      - name: Rebuild and verify V12 game
+      - name: Rebuild V12 base
         shell: bash
         run: |
           mkdir -p site
@@ -39,6 +39,12 @@ jobs:
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
           echo 'f81cde20b925a658facdc09bf2f6625a372660b44a3ed77498d93b5941ba7640  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V13 polish
+        shell: bash
+        run: |
+          (cd site && patch -p1 < ../tools/v13.patch)
+          echo '306a6865a7b2523c33989e6c5f60122fa1b49ffa3ec099521bd69d4b0c809a86  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
