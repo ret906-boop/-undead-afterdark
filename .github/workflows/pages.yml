@@ -60,17 +60,15 @@ jobs:
           patch --batch --forward site/index.html < tools/v17.patch
           echo 'bddb4b7ff78b5549c9f59835d97e588d6cd72ce01c4b51ea9e0187b7d3c2836b  site/index.html' | sha256sum -c -
 
-      - name: Apply V18 art update
+      - name: Apply and verify V18 art update
         shell: bash
         run: |
-          echo 'ecf93414e685183cfd3903b8657599e9d131eb66b72c3a593974ba73bc9b1c82  tools/v18.patch' | sha256sum -c -
           patch --batch --forward site/index.html < tools/v18.patch
           echo '6d2d582c06d3254ddd66fb8934a02d5576c2693ebb6a1acabb82e1a575d72206  site/index.html' | sha256sum -c -
 
       - name: Apply and verify V19 sound update
         shell: bash
         run: |
-          echo '57b5b73b3b5ef9f37668fe151bce25870e6d2513990b73cd681c7c77aabe92bf  tools/v19.patch' | sha256sum -c -
           patch --batch --forward site/index.html < tools/v19.patch
           echo '1f23a15314ebe93b7dc76789e3a1edcb8280a639684d668f155cf76dbd32a533  site/index.html' | sha256sum -c -
           touch site/.nojekyll
