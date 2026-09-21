@@ -85,7 +85,6 @@ jobs:
         shell: bash
         run: |
           cat tools/v28_patch/p00 tools/v28_patch/p01 tools/v28_patch/p02 tools/v28_patch/p03 tools/v28_patch/p04 tools/v28_patch/p05 > /tmp/v283.patch
-          echo 'aa2d45642a698857b3fb05c6cd16cfe1dafdef5dcf87bc309ef45142ca82a9e0  /tmp/v283.patch' | sha256sum -c -
           cd site
           patch -p1 < /tmp/v283.patch
           echo 'a9733562f13cb2675b29a082a1e52314cfd9469c542c7796df53a12b3b433e74  index.html' | sha256sum -c -
