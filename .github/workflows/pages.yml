@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V28.6 Retry
+name: Deploy Undead Afterdark V28.6 Force
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-v286-force
   cancel-in-progress: true
 
 jobs:
