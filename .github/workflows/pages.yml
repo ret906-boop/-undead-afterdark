@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V29
+name: Deploy Undead Afterdark V30
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v29
+  group: pages-v30
   cancel-in-progress: true
 
 jobs:
@@ -21,36 +21,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build verified V29 site
+      - name: Build verified V30 site
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p site
           curl --fail --location --retry 5 \
-            "https://ret906-boop.github.io/-undead-afterdark/?v29base=${GITHUB_SHA}" \
+            "https://ret906-boop.github.io/-undead-afterdark/?v30base=${GITHUB_SHA}" \
             -o /tmp/base.html
 
           base_hash=$(sha256sum /tmp/base.html | awk '{print $1}')
-          v286='322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859'
           v29='ecdabdc562b8701172880ab44dea080e9ae3cf8e03ba185af2421cbb94589756'
+          v30='c5f589ac3eabb3f266a712108df05bb73503d066d74935aace7feb613118dd50'
 
-          if [ "$base_hash" = "$v29" ]; then
+          if [ "$base_hash" = "$v30" ]; then
             cp /tmp/base.html site/index.html
-          elif [ "$base_hash" = "$v286" ]; then
-            tr -d '[:space:]' < tools/v29_patch/v29.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v29.patch
-            echo '0a0a479668929b53e8b578b3e9d457611cdc8857a753103d04704df45de091b2  /tmp/v29.patch' | sha256sum -c -
+          elif [ "$base_hash" = "$v29" ]; then
+            tr -d '[:space:]' < tools/v30_patch/v30.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v30.patch
+            echo '7e163b0dd3be6284b1c4b54802b09a4a6d6165d9b1b5c034822b63044eacf813  /tmp/v30.patch' | sha256sum -c -
             cp /tmp/base.html site/index.html
             cd site
-            patch -p1 < /tmp/v29.patch
+            patch -p1 < /tmp/v30.patch
             cd ..
           else
             echo "Unexpected live base hash: $base_hash"
             exit 1
           fi
 
-          echo "$v29  site/index.html" | sha256sum -c -
-          grep -q 'V29 // SURVIVOR PROGRESSION + BOSS PHASES' site/index.html
-          grep -q "undead_afterdark_profile_v1" site/index.html
+          echo "$v30  site/index.html" | sha256sum -c -
+          grep -q 'V30 // LOOT + EVOLVED INFECTED + SKILL TREE' site/index.html
+          grep -q 'SURVIVOR SKILL TREE' site/index.html
+          grep -q 'EVOLUTION_DEFS' site/index.html
+          grep -q 'RARITIES' site/index.html
           touch site/.nojekyll
 
       - name: Configure Pages
