@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V28.4
+name: Deploy Undead Afterdark V28.5
 
 on:
   push:
@@ -98,6 +98,15 @@ jobs:
           cd site
           patch -p1 < /tmp/v284.patch
           echo '3819247c9ef5525bfe6e7e5f91b2c20effe0d9c6d992e452dc1f5c112d20f5d2  index.html' | sha256sum -c -
+          touch .nojekyll
+
+      - name: Apply V28.5 iOS button fix
+        shell: bash
+        run: |
+          echo '27fff6184a4820acd0cdd34c4f66b44184ccf973d00d92435612aec2864d09bc  tools/v285_patch/v285.patch' | sha256sum -c -
+          cd site
+          patch -p1 < ../tools/v285_patch/v285.patch
+          echo '52cc04185fb98b2d0d51e847cff0defdb5c5ce7322864c58b65392001274a0c2  index.html' | sha256sum -c -
           touch .nojekyll
 
       - name: Configure Pages
