@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V28.5
+name: Deploy Undead Afterdark V28.6
 
 on:
   push:
@@ -107,6 +107,15 @@ jobs:
           cd site
           patch -p1 < ../tools/v285_patch/v285.patch
           echo '52cc04185fb98b2d0d51e847cff0defdb5c5ce7322864c58b65392001274a0c2  index.html' | sha256sum -c -
+          touch .nojekyll
+
+      - name: Apply V28.6 co-op lobby layer fix
+        shell: bash
+        run: |
+          echo '48230cf4ee59c624c5fdaa84405d4102125adce97bb7c531eb6a7ec5e02cce51  tools/v286_patch/v286.patch' | sha256sum -c -
+          cd site
+          patch -p1 < ../tools/v286_patch/v286.patch
+          echo '322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859  index.html' | sha256sum -c -
           touch .nojekyll
 
       - name: Configure Pages
