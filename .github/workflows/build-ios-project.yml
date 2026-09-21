@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'mobile/**'
+      - 'tools/v29_patch/**'
       - '.github/workflows/build-ios-project.yml'
 
 permissions:
@@ -27,14 +28,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: mobile/package.json
 
-      - name: Embed verified V28.6 game
+      - name: Embed verified V29 game
         shell: bash
         run: |
           mkdir -p mobile/www
           curl --fail --location --retry 5 \
-            'https://ret906-boop.github.io/-undead-afterdark/?ios=v286-322635ff' \
+            'https://ret906-boop.github.io/-undead-afterdark/?ios=v29-ecdabdc5' \
             -o mobile/www/index.html
-          echo '322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859  mobile/www/index.html' | shasum -a 256 -c -
+          echo 'ecdabdc562b8701172880ab44dea080e9ae3cf8e03ba185af2421cbb94589756  mobile/www/index.html' | shasum -a 256 -c -
+          grep -q 'V29 // SURVIVOR PROGRESSION + BOSS PHASES' mobile/www/index.html
 
       - name: Install Capacitor 8
         working-directory: mobile
