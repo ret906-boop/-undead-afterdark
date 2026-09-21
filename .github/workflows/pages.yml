@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V30
+name: Deploy Undead Afterdark V30.1
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v30
+  group: pages-v301
   cancel-in-progress: true
 
 jobs:
@@ -21,38 +21,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build verified V30 site
+      - name: Rebuild verified V30.1
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p site
-          curl --fail --location --retry 5 \
-            "https://ret906-boop.github.io/-undead-afterdark/?v30base=${GITHUB_SHA}" \
-            -o /tmp/base.html
 
-          base_hash=$(sha256sum /tmp/base.html | awk '{print $1}')
-          v29='ecdabdc562b8701172880ab44dea080e9ae3cf8e03ba185af2421cbb94589756'
-          v30='c5f589ac3eabb3f266a712108df05bb73503d066d74935aace7feb613118dd50'
+          cat > /tmp/chunk-sha.txt <<'SHAS'
+          30076be0b52008f6d118a1f73c4240bdb7a8adf94bb028b2d3d954e78399efb3  tools/v301_release/c00.txt
+          a20d50573492939b68ae5c63901e27f7bc02028ed2faa58098688ca595bb19bd  tools/v301_release/c01.txt
+          1618e8b9f4b9c146ca12ed5ca627008b5141b4834d11a8b5c387c507c0dbd581  tools/v301_release/c02.txt
+          f6db8afc01854ca527937f7703aa161347776fbe9a338e9ef85991aef88825f9  tools/v301_release/c03.txt
+          d0a28862f6d1ef0a559817b610b68f01fd7ef7594ed093d0d9de2ab64ed77467  tools/v301_release/c04.txt
+          ae32fb93ec1818fd3e2c6232a07a3c2a10713fab98e4b1e801383d3bc76db768  tools/v301_release/c05.txt
+          0541663363075efc8bae07f83a1635cb275c4905cf9def9235b637536e1e5044  tools/v301_release/c06.txt
+          bf5e1ef94e125339c47c64cc592f1ab0902957dffb3de2f05d81526c45b87c82  tools/v301_release/c07.txt
+          97bcd90002881cf0dee1dbd1adc1f08ac7ca71937df58562d9fb498f0b75ea87  tools/v301_release/c08.txt
+          7c923257efd80beda70b6dcdd4eeea0b33d7fca1f001ba12d39929c528664442  tools/v301_release/c09.txt
+          8ea40e48e94584c36b3c2563e35e60a43b08d3027bb9d24aaf6b1822ed2a477c  tools/v301_release/c10.txt
+          4838656badc87f638fa58977995f9ee6035c90aebb94a973a5011ce0c6b16b95  tools/v301_release/c11.txt
+          d08ab0c58d4856c81c36cfa24a352b0352adb64ae751f5ae4f87e7a0f124f823  tools/v301_release/c12.txt
+          c1eac9f6cd7d9d1859f16fee51b843ba73c651a05a5374cf0e062decc2e23894  tools/v301_release/c13.txt
+          SHAS
+          sha256sum -c /tmp/chunk-sha.txt
 
-          if [ "$base_hash" = "$v30" ]; then
-            cp /tmp/base.html site/index.html
-          elif [ "$base_hash" = "$v29" ]; then
-            tr -d '[:space:]' < tools/v30_patch/v30.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v30.patch
-            echo '7e163b0dd3be6284b1c4b54802b09a4a6d6165d9b1b5c034822b63044eacf813  /tmp/v30.patch' | sha256sum -c -
-            cp /tmp/base.html site/index.html
-            cd site
-            patch -p1 < /tmp/v30.patch
-            cd ..
-          else
-            echo "Unexpected live base hash: $base_hash"
-            exit 1
-          fi
+          cat tools/v301_release/c{00..13}.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode > site/game.gz
 
-          echo "$v30  site/index.html" | sha256sum -c -
-          grep -q 'V30 // LOOT + EVOLVED INFECTED + SKILL TREE' site/index.html
-          grep -q 'SURVIVOR SKILL TREE' site/index.html
-          grep -q 'EVOLUTION_DEFS' site/index.html
-          grep -q 'RARITIES' site/index.html
+          echo '8e575da8bcd7bf1049caee9cf5676b3f3aee6ca9cf989e4ed0a4bb91f446ed6e  site/game.gz' | sha256sum -c -
+
+          gzip -dc site/game.gz > site/index.html
+          rm site/game.gz
+
+          echo '55d7f13b71816e4eac142db0e06d000c84a63bdac5bd4537b55f6a83b3fb043a  site/index.html' | sha256sum -c -
+          grep -q 'V30.1 // CO-OP SHOP + AUTO-FIRE + SOUND + SAVE' site/index.html
+          grep -q 'undead_afterdark_coop_v301_save' site/index.html
           touch site/.nojekyll
 
       - name: Configure Pages
