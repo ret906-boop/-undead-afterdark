@@ -1,0 +1,73 @@
+  function joinCoopReady(){
++    const pendingName=sanitizeName(document.getElementById('coopName').value);
++    destroyNetwork();net.name=pendingName;showLobby(String(document.getElementById('coopCode').value||'').toUpperCase().slice(0,6),false);lobbyMessage('LOADING MULTIPLAYER…');
++    ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}joinCoopReady()});
++  }
++  function hostCoopReady(){
+     destroyNetwork();net.mode='host';net.name=sanitizeName(document.getElementById('coopName').value);net.roomCode=makeRoomCode();net.localId='host';player.name=net.name;player.color=COOP_COLORS[0];showLobby(net.roomCode,true);lobbyMessage('CREATING ROOM…');
+     net.peer=createPeer(peerIdFor(net.roomCode),()=>{net.connected=true;lobbyMessage('ROOM OPEN • SHARE THE CODE');updateSquadUI()});if(!net.peer)return;
+     net.peer.on('connection',conn=>{
+@@ -753,16 +786,16 @@
+   }
+   function lobbyPlayers(){return [{id:'host',name:net.name,slot:0,color:COOP_COLORS[0],hp:player.hp,maxHp:player.maxHp,downed:player.downed,eliminated:player.eliminated},...net.remotePlayers.values()].filter(p=>!p.disconnected).map(p=>({id:p.id,name:p.name,slot:p.slot,color:p.color,hp:p.hp,maxHp:p.maxHp,downed:p.downed,eliminated:p.eliminated,x:p.x,y:p.y,aimX:p.aimX,aimY:p.aimY,weapon:p.weapon,ammo:p.ammo,stamina:p.stamina}))}
+   function broadcastLobby(){const m={t:'lobby',players:lobbyPlayers()};for(const c of net.conns.values())if(c.open)c.send(m);updateSquadUI()}
+-  function publicPlayer(p,id,slot,color,name){return {id,name,slot,color,x:p.x,y:p.y,r:p.r,hp:p.hp,maxHp:p.maxHp,armor:p.armor,maxArmor:p.maxArmor,weapon:p.weapon,ammo:p.ammo,reloading:p.reloading,aimX:p.aimX,aimY:p.aimY,animT:p.animT,moveMag:p.moveMag,stamina:p.stamina,downed:p.downed,downedTimer:p.downedTimer,reviveProgress:p.reviveProgress,eliminated:p.eliminated}}
++  function publicPlayer(p,id,slot,color,name){return {id,name,slot,color,x:p.x,y:p.y,r:p.r,hp:p.hp,maxHp:p.maxHp,armor:p.armor,maxArmor:p.maxArmor,weapon:p.weapon,ammo:p.ammo,reloading:p.reloading,aimX:p.aimX,aimY:p.aimY,animT:p.animT,moveMag:p.moveMag,stamina:p.stamina,downed:p.downed,downedTimer:p.downedTimer,reviveProgress:p.reviveProgress,eliminated:p.eliminated,parasiteTimer:p.parasiteTimer||0,grabTimer:p.grabTimer||0}}
+   function makeSnapshot(){
+-    return {wave:state.wave,kills:state.kills,cash:state.cash,spawned:state.spawned,spawnTarget:state.spawnTarget,waveFinished:state.waveFinished,inShop:state.inShop,paused:state.paused,running:state.running,upgrades:state.upgrades,perks:state.perks,owned:state.owned,buildStock:state.buildStock,zombies:state.zombies,bullets:state.bullets,drops:state.drops,defenses:state.defenses,decals:state.decals.slice(-140),players:[publicPlayer(player,'host',0,COOP_COLORS[0],net.name),...[...net.remotePlayers.values()].filter(p=>!p.disconnected).map(p=>publicPlayer(p,p.id,p.slot,p.color,p.name))]};
++    return {wave:state.wave,kills:state.kills,cash:state.cash,spawned:state.spawned,spawnTarget:state.spawnTarget,waveFinished:state.waveFinished,inShop:state.inShop,paused:state.paused,running:state.running,upgrades:state.upgrades,perks:state.perks,owned:state.owned,buildStock:state.buildStock,zombies:state.zombies,bullets:state.bullets,enemyProjectiles:state.enemyProjectiles,hazards:state.hazards,drops:state.drops,defenses:state.defenses,decals:state.decals.slice(-140),players:[publicPlayer(player,'host',0,COOP_COLORS[0],net.name),...[...net.remotePlayers.values()].filter(p=>!p.disconnected).map(p=>publicPlayer(p,p.id,p.slot,p.color,p.name))]};
+   }
+   function sendSnapshotTo(conn){if(conn&&conn.open)conn.send({t:'snap',s:makeSnapshot()})}
+   function broadcastSnapshot(){const msg={t:'snap',s:makeSnapshot()};for(const c of net.conns.values())if(c.open)c.send(msg)}
+   function applySnapshot(s){
+     if(!s)return;const oldWave=state.wave;
+-    state.wave=s.wave;state.kills=s.kills;state.cash=s.cash;state.spawned=s.spawned;state.spawnTarget=s.spawnTarget;state.waveFinished=s.waveFinished;state.inShop=s.inShop;state.paused=s.paused;state.running=s.running;state.upgrades=s.upgrades||state.upgrades;state.perks=s.perks||state.perks;state.owned=s.owned||state.owned;state.buildStock=s.buildStock||state.buildStock;state.zombies=s.zombies||[];state.bullets=s.bullets||[];state.drops=s.drops||[];state.defenses=s.defenses||[];state.decals=s.decals||[];state.particles=[];
+-    net.renderPlayers=s.players||[];const me=net.renderPlayers.find(p=>p.id===net.localId);if(me){const lerp=.58;player.x=player.x+(me.x-player.x)*lerp;player.y=player.y+(me.y-player.y)*lerp;for(const k of ['r','hp','maxHp','armor','maxArmor','weapon','ammo','reloading','aimX','aimY','animT','moveMag','stamina','downed','downedTimer','reviveProgress','eliminated'])if(me[k]!==undefined)player[k]=me[k];player.color=me.color;player.name=me.name}
++    state.wave=s.wave;state.kills=s.kills;state.cash=s.cash;state.spawned=s.spawned;state.spawnTarget=s.spawnTarget;state.waveFinished=s.waveFinished;state.inShop=s.inShop;state.paused=s.paused;state.running=s.running;state.upgrades=s.upgrades||state.upgrades;state.perks=s.perks||state.perks;state.owned=s.owned||state.owned;state.buildStock=s.buildStock||state.buildStock;state.zombies=s.zombies||[];state.bullets=s.bullets||[];state.enemyProjectiles=s.enemyProjectiles||[];state.hazards=s.hazards||[];state.drops=s.drops||[];state.defenses=s.defenses||[];state.decals=s.decals||[];state.particles=[];
++    net.renderPlayers=s.players||[];const me=net.renderPlayers.find(p=>p.id===net.localId);if(me){const lerp=.58;player.x=player.x+(me.x-player.x)*lerp;player.y=player.y+(me.y-player.y)*lerp;for(const k of ['r','hp','maxHp','armor','maxArmor','weapon','ammo','reloading','aimX','aimY','animT','moveMag','stamina','downed','downedTimer','reviveProgress','eliminated','parasiteTimer','grabTimer'])if(me[k]!==undefined)player[k]=me[k];player.color=me.color;player.name=me.name}
+     if(oldWave!==state.wave&&state.running)sfxWave(isBossWave(state.wave));
+     if(net.mode==='client')document.getElementById('shopOverlay').style.display='none';if(ui.coopWait)ui.coopWait.style.display=state.inShop?'flex':'none';updateSquadUI();syncUI();
+   }
+@@ -800,7 +833,8 @@
+   // V20 real-sample audio layer. Gunshots are CC0 firearm recordings and zombie calls are CC0 mic-recorded vocal samples.
+   // Sources: OpenGameArt Gunshots by kurt; Zomby sfx pack by saturn91.
+   const SOUND_PREF_KEY='undead_afterdark_sound_enabled';
+-  let soundEnabled=localStorage.getItem(SOUND_PREF_KEY)!=='off';
++  let soundEnabled=true;
++  try{ soundEnabled=localStorage.getItem(SOUND_PREF_KEY)!=='off'; }catch(err){ soundEnabled=true; }
+   let audioCtx=null, masterGain=null, ambienceGain=null;
+   let ambientSfxTimer=1.8, footstepTimer=0;
+ 
+@@ -967,7 +1001,7 @@
+   }
+   function sfxStep(sprinting=false){noiseBurst(.035,sprinting?.026:.015,sprinting?260:210,'lowpass');tone(sprinting?72:60,.03,sprinting?.014:.008,'sine',.7)}
+   function refreshSoundButton(){if(!ui.soundBtn)return;ui.soundBtn.textContent=soundEnabled?'SOUND ON':'SOUND OFF';ui.soundBtn.classList.toggle('off',!soundEnabled)}
+-  function toggleSound(){soundEnabled=!soundEnabled;localStorage.setItem(SOUND_PREF_KEY,soundEnabled?'on':'off');if(soundEnabled)ensureAudio();refreshSoundButton()}
++  function toggleSound(){soundEnabled=!soundEnabled;try{localStorage.setItem(SOUND_PREF_KEY,soundEnabled?'on':'off')}catch(err){}if(soundEnabled)ensureAudio();refreshSoundButton()}
+ 
+   const CHUNK=1200;
+   const chunks=new Map();
+@@ -1453,7 +1487,7 @@
+       }
+     }else{
+       btn.style.display='none';
+-      if(info) info.textContent='V27: play solo or host up to three friends. The host runs the shared world; team cash, upgrades, weapons, defenses, waves, and infected stay synchronized.';
++      if(info) info.textContent='V28: play solo or host up to three friends. Special infected, boss phases, hazards, defenses, waves, and shared progression stay synchronized by the host.';
+     }
+   }
+ 
+@@ -1470,7 +1504,7 @@
+     if(!state.running && !state.inShop) return false;
+     try{
+       const data={
+-        v:26,savedAt:Date.now(),
++        v:28,savedAt:Date.now(),
+         state:{
+           wave:state.wave,kills:state.kills,cash:state.cash,
+           upgrades:{...state.upgrades},perks:{...state.perks},owned:[...state.owned],
+@@ -1501,7 +1535,7 @@
+     const sd=data.state,pd=data.player;
+     Object.assign(state,{
+       running:true,paused:false,inShop:false,wave:Math.max(1,sd.wave||1),kills:sd.kills||0,cash:sd.cash||0,
+-      zombies:[],bullets:[],drops:[],particles:[],decals:[],defenses:Array.isArray(sd.defenses)?sd.defenses.map(d=>({...d})):[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
++      zombies:[],bullets:[],enemyProjectiles:[],hazards:[],drops:[],particles:[],decals:[],defenses:Array.isArray(sd.defenses)?sd.defenses.map(d=>({...d})):[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,wa
