@@ -1,0 +1,105 @@
+--- a/index.html
++++ b/index.html
+@@ -7,8 +7,8 @@
+ <meta name="apple-mobile-web-app-capable" content="yes" />
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="theme-color" content="#050709" />
+-<meta name="description" content="Undead Afterdark V28 - expanded infected and boss roster, mobile-ready 1 to 4 player co-op survival across Ashfall County." />
+-<title>Undead Afterdark V28.3 Playable Mobile</title>
++<meta name="description" content="Undead Afterdark V28.4 - tougher scaling bosses plus Level 49 endless survival mode." />
++<title>Undead Afterdark V28.4 Endless 49</title>
+ <style>
+   :root{
+     --bg:#0a0d10;
+@@ -449,9 +449,9 @@
+     </div>
+   </div>
+   <div class="wavePanel">
+-    <div class="waveTop">WAVE</div>
++    <div class="waveTop" id="waveTopTxt">WAVE</div>
+     <div class="waveNum" id="waveTxt">1</div>
+-    <div class="remain"><span id="zombiesLeftTxt">0</span> INFECTED LEFT</div>
++    <div class="remain"><span id="zombiesLeftTxt">0</span> <span id="remainLabel">INFECTED LEFT</span></div>
+     <div class="waveTrack"><i id="waveMeterFill"></i></div>
+   </div>
+ 
+@@ -500,7 +500,7 @@
+         <div>
+           <div class="menuEyebrow">Survival Protocol // Nightfall</div>
+           <h1 class="menuTitle">UNDEAD<span>AFTERDARK</span></h1>
+-          <p class="menuTag">The lights are gone. The infected are not. Survive escalating waves alone or with up to three other survivors. Scavenge weapons, cross the 16×16 survival region, fortify landmarks, revive downed teammates, and prepare for a Warden every fifth wave.</p>
++          <p class="menuTag">The lights are gone. The infected are not. Survive escalating waves, or jump straight into Level 49 Endless with $10,000 and a continuous horde. Scavenge weapons, fortify landmarks, and survive rotating bosses.</p>
+         </div>
+         <div class="menuRule"></div>
+         <div class="menuStats">
+@@ -530,6 +530,7 @@
+         <div class="menuActions">
+           <button class="startBtn" id="continueBtn" style="display:none">CONTINUE RUN</button>
+           <button class="startBtn" id="startBtn">START NEW RUN</button>
++          <button class="startBtn" id="endless49Btn" style="background:linear-gradient(180deg,#702b38,#431722)">LEVEL 49 ENDLESS • $10,000</button>
+           <div class="coopInputs">
+             <input id="coopName" class="coopInput" type="text" inputmode="text" maxlength="14" value="SURVIVOR" aria-label="Player name" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+             <input id="coopCode" class="coopInput" type="text" inputmode="text" maxlength="6" placeholder="TAP TO TYPE CODE" aria-label="Room code" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">
+@@ -538,9 +539,9 @@
+             <button class="startBtn" id="hostCoopBtn">HOST CO-OP</button>
+             <button class="startBtn" id="joinCoopBtn">JOIN CO-OP</button>
+           </div>
+-          <div class="menuVersion">V28 // INFECTED + BOSS UPDATE // 1–4 PLAYER CO-OP</div>
++          <div class="menuVersion">V28.4 // DOUBLE-HP BOSSES + LEVEL 49 ENDLESS</div>
+         </div>
+-        <div class="smallText" id="saveInfo">V28: expanded special infected and rotating bosses. Play solo or host up to 3 friends. The host owns the shared simulation; cash, weapons, upgrades, defenses, waves, boss abilities, and infected stay synchronized.</div>
++        <div class="smallText" id="saveInfo">V28.4: wave survival now has stronger HP scaling and double-health bosses. Level 49 Endless starts with $10,000, never pauses for wave clears, and grows harder by kills.</div>
+       </div>
+     </div>
+   </div>
+@@ -610,6 +611,8 @@
+ 
+   const ui = {
+     wave: document.getElementById('waveTxt'),
++    waveTop: document.getElementById('waveTopTxt'),
++    remainLabel: document.getElementById('remainLabel'),
+     hp: document.getElementById('hpTxt'),
+     armor: document.getElementById('armorTxt'),
+     weapon: document.getElementById('weaponTxt'),
+@@ -656,7 +659,7 @@
+   };
+ 
+   const state = {
+-    running:false, paused:false, inShop:false, wave:1, kills:0, cash:0,
++    running:false, paused:false, inShop:false, mode:'waves', wave:1, kills:0, cash:0, endlessStarted:false, endlessNextLevelKills:50, endlessNextBossKills:100, endlessBossIndex:0,
+     zombies:[], bullets:[], enemyProjectiles:[], hazards:[], drops:[], particles:[], decals:[], defenses:[], turretShots:[], keys:{}, mouse:{x:0,y:0,down:false},
+     joy:{x:0,y:0,active:false}, fireHeld:false, fireAim:{x:1,y:0,active:false}, manualAimHold:false, autoFire:true, autoTarget:null, autoTargetTimer:0, sprintHeld:false,
+     buildStock:{wood:0,metal:0,steel:0,turret:0}, placing:null, placementRotation:0,
+@@ -1500,7 +1503,7 @@
+   }
+ 
+   function saveGame(showToast=false){
+-    if(net.mode==='client') return false;
++    if(net.mode==='client' || state.mode==='endless49') return false;
+     if(!state.running && !state.inShop) return false;
+     try{
+       const data={
+@@ -1565,10 +1568,11 @@
+     return true;
+   }
+ 
+-  function reset(){
++  function reset(mode='waves'){
+     clearSave();
++    const endless=mode==='endless49';
+     Object.assign(state,{
+-      running:true,paused:false,inShop:false,wave:1,kills:0,cash:0,
++      running:true,paused:false,inShop:false,mode,wave:endless?49:1,kills:0,cash:endless?10000:0,endlessStarted:false,endlessNextLevelKills:50,endlessNextBossKills:100,endlessBossIndex:0,
+       zombies:[],bullets:[],enemyProjectiles:[],hazards:[],drops:[],particles:[],decals:[],defenses:[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+       buildStock:{wood:0,metal:0,steel:0,turret:0},placing:null,placementRotation:0,
+       upgrades:{damage:0, fireRate:0, reload:0, mag:0, move:0, dash:0},
+@@ -1583,11 +1587,39 @@
+     if(net.mode==='host'){
+       let i=0;for(const p of net.remotePlayers.values()){if(p.disconnected)continue;const off=[[52,0],[-52,0],[0,52]][i++]||[0,52];Object.assign(p,{x:player.x+off[0],y:player.y+off[1],hp:100,maxHp:100,armor:0,maxArmor:0,weapon:'sidearm',ammo:12,reloading:false,reloadTimer:0,fireCd:0,aimX:1,aimY:0,stamina:100,downed:false,downedTimer:0,reviveProgress:0,eliminated:false,invuln:0});}
+     }
+-    startWave();
++    if(endless) startEndlessLoadout(); else startWave();
+     saveGame(false);
+   }
+ 
++  function startEndlessLoadout(){

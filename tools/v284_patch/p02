@@ -1,0 +1,35 @@
++    if(ui.waveTop)ui.waveTop.textContent=state.mode==='endless49'?'LEVEL':'WAVE';
++    if(ui.remainLabel)ui.remainLabel.textContent=state.mode==='endless49'?'ACTIVE INFECTED':'INFECTED LEFT';
+     ui.wave.textContent=state.wave;
+     ui.hp.textContent=Math.max(0,Math.ceil(player.hp));
+     ui.armor.textContent=Math.ceil(player.armor);
+     ui.weapon.textContent=weapons[player.weapon].name+(player.reloading?' • RELOADING':` • ${player.ammo}/${getMag()}`);
+     ui.cash.textContent='$'+state.cash;
+     ui.kills.textContent=state.kills;
+-    const remaining=Math.max(0,state.zombies.length+Math.max(0,state.spawnTarget-state.spawned));
++    const remaining=state.mode==='endless49'?state.zombies.filter(z=>!z.dead).length:Math.max(0,state.zombies.length+Math.max(0,state.spawnTarget-state.spawned));
+     if(ui.zombiesLeft) ui.zombiesLeft.textContent=remaining;
+-    if(ui.waveMeter){const total=Math.max(1,state.spawnTarget),done=Math.max(0,total-remaining);ui.waveMeter.style.width=(Math.min(1,done/total)*100).toFixed(1)+'%'}
++    if(ui.waveMeter){if(state.mode==='endless49'){const cap=Math.max(1,endlessLiveCap());ui.waveMeter.style.width=(Math.min(1,remaining/cap)*100).toFixed(1)+'%'}else{const total=Math.max(1,state.spawnTarget),done=Math.max(0,total-remaining);ui.waveMeter.style.width=(Math.min(1,done/total)*100).toFixed(1)+'%'}}
+     if(ui.hpFill) ui.hpFill.style.width=(Math.max(0,Math.min(1,player.hp/Math.max(1,player.maxHp)))*100).toFixed(1)+'%';
+     if(ui.armorFill) ui.armorFill.style.width=(Math.max(0,Math.min(1,player.armor/Math.max(1,player.maxArmor||1)))*100).toFixed(1)+'%';
+     if(ui.stamTxt) ui.stamTxt.textContent=Math.round(player.stamina)+'%';
+@@ -2984,14 +3027,15 @@
+   if(coopNameInput)coopNameInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});
+ 
+   document.getElementById('continueBtn').onclick=()=>{destroyNetwork();ensureAudio();loadSavedRun()};
+-  document.getElementById('startBtn').onclick=()=>{destroyNetwork();ensureAudio();document.getElementById('startOverlay').style.display='none';reset()};
++  document.getElementById('startBtn').onclick=()=>{destroyNetwork();ensureAudio();document.getElementById('startOverlay').style.display='none';reset('waves')};
++  document.getElementById('endless49Btn').onclick=()=>{destroyNetwork();ensureAudio();document.getElementById('startOverlay').style.display='none';reset('endless49')};
+   document.getElementById('hostCoopBtn').onclick=()=>{ensureAudio();hostCoop()};
+   document.getElementById('joinCoopBtn').onclick=()=>{ensureAudio();const code=String(document.getElementById('coopCode').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);if(code.length<4){showLobby(code,false);lobbyMessage('ENTER A VALID ROOM CODE');return}showLobby(code,false);lobbyMessage('LOADING MULTIPLAYER…');ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}joinCoop()})};
+   document.getElementById('coopStartBtn').onclick=()=>{if(net.mode!=='host')return;closeLobby();document.getElementById('startOverlay').style.display='none';reset();net.starting=true;for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()};
+   document.getElementById('coopLeaveBtn').onclick=()=>{destroyNetwork();ui.coopLobbyOverlay.style.display='none'};
+   document.getElementById('saveNowBtn').onclick=()=>{if(net.mode!=='client')saveGame(true)};
+-  document.getElementById('nextWaveBtn').onclick=()=>{if(net.mode==='client')return;currentPerks=[];state.wave++;startWave();saveGame(false)};
+-  document.getElementById('restartBtn').onclick=()=>{document.getElementById('gameOverOverlay').style.display='none';if(net.mode==='client'){destroyNetwork();document.getElementById('startOverlay').style.display='flex'}else{reset();if(net.mode==='host'){for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()}}};
++  document.getElementById('nextWaveBtn').onclick=()=>{if(net.mode==='client')return;currentPerks=[];if(state.mode==='endless49'){startEndlessCombat();return}state.wave++;startWave();saveGame(false)};
++  document.getElementById('restartBtn').onclick=()=>{const mode=state.mode||'waves';document.getElementById('gameOverOverlay').style.display='none';if(net.mode==='client'){destroyNetwork();document.getElementById('startOverlay').style.display='flex'}else{reset(mode);if(net.mode==='host'){for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()}}};
+ 
+   refreshContinueButton();
+   syncUI();
