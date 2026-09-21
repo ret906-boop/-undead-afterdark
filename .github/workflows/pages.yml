@@ -56,24 +56,25 @@ jobs:
           s=s.replace('            <input id="coopName" class="coopInput" maxlength="14" value="SURVIVOR" aria-label="Player name">\n            <input id="coopCode" class="coopInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code">','            <input id="coopName" class="coopInput" type="text" inputmode="text" maxlength="14" value="SURVIVOR" aria-label="Player name" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">\n            <input id="coopCode" class="coopInput" type="text" inputmode="text" maxlength="6" placeholder="TAP TO TYPE CODE" aria-label="Room code" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">',1)
           s=s.replace("  addEventListener('keydown',e=>{\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;","  addEventListener('keydown',e=>{\n    const tag=(e.target&&e.target.tagName||'').toLowerCase();\n    if(tag==='input'||tag==='textarea'||tag==='select'||(e.target&&e.target.isContentEditable))return;\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;",1)
           anchor="  document.getElementById('continueBtn').onclick=()=>{destroyNetwork();ensureAudio();loadSavedRun()};"
-          block="""  // Mobile-safe co-op text entry. Gameplay owns touch gestures only on the canvas; menu inputs remain native controls.
-          const coopNameInput=document.getElementById('coopName');
-          const coopCodeInput=document.getElementById('coopCode');
-          for(const el of [coopNameInput,coopCodeInput]){
-            if(!el)continue;
-            for(const ev of ['touchstart','touchend','pointerdown','pointerup','click'])el.addEventListener(ev,e=>e.stopPropagation(),{passive:true});
-          }
-          if(coopCodeInput){
-            coopCodeInput.addEventListener('input',()=>{
-              const clean=coopCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
-              if(coopCodeInput.value!==clean)coopCodeInput.value=clean;
-            });
-            coopCodeInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});
-            coopCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();coopCodeInput.blur();joinCoop()}});
-          }
-          if(coopNameInput)coopNameInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});
-
-          """+anchor
+          block=(
+            "  // Mobile-safe co-op text entry. Gameplay owns touch gestures only on the canvas; menu inputs remain native controls.\n"
+            "  const coopNameInput=document.getElementById('coopName');\n"
+            "  const coopCodeInput=document.getElementById('coopCode');\n"
+            "  for(const el of [coopNameInput,coopCodeInput]){\n"
+            "    if(!el)continue;\n"
+            "    for(const ev of ['touchstart','touchend','pointerdown','pointerup','click'])el.addEventListener(ev,e=>e.stopPropagation(),{passive:true});\n"
+            "  }\n"
+            "  if(coopCodeInput){\n"
+            "    coopCodeInput.addEventListener('input',()=>{\n"
+            "      const clean=coopCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);\n"
+            "      if(coopCodeInput.value!==clean)coopCodeInput.value=clean;\n"
+            "    });\n"
+            "    coopCodeInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});\n"
+            "    coopCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();coopCodeInput.blur();joinCoop()}});\n"
+            "  }\n"
+            "  if(coopNameInput)coopNameInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});\n\n"
+            + anchor
+          )
           s=s.replace(anchor,block,1)
           s=s.replace('V27 // MOBILE + 1–4 PLAYER CO-OP // PUBLIC ALPHA','V27.1 // MOBILE INPUT FIX + 1–4 PLAYER CO-OP',1)
           p.write_text(s,encoding='utf-8')
