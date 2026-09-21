@@ -1,0 +1,72 @@
+--- a/index.html
++++ b/index.html
+@@ -5,7 +5,7 @@
+ <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+ <meta name="mobile-web-app-capable" content="yes" />
+ <meta name="apple-mobile-web-app-capable" content="yes" />
+-<title>Undead Afterdark V28.4 Endless 49</title>
++<title>Undead Afterdark V28.5 iOS Button Fix</title>
+@@
+-          <div class="menuVersion">V28.4 // DOUBLE-HP BOSSES + LEVEL 49 ENDLESS</div>
++          <div class="menuVersion">V28.5 // iOS BUTTON FIX + ENDLESS 49</div>
+@@
+-<script id="v283-touch-shim">
++<script id="v285-ios-button-fix">
+ (()=>{
+-  // iOS/embedded previews sometimes display a button but never synthesize its click from a tap.
+-  // Convert touchend to an explicit click only for menus/overlays, leaving twin-stick combat controls alone.
+-  const selector='#startOverlay button,#coopLobbyOverlay button,#shopOverlay button,#gameOverOverlay button,#mapOverlay button,#placementHUD button';
+-  let syntheticUntil=0;
+-  document.addEventListener('touchend',e=>{
+-    const btn=e.target && e.target.closest ? e.target.closest(selector) : null;
+-    if(!btn || btn.disabled) return;
+-    e.preventDefault();e.stopPropagation();
+-    syntheticUntil=Date.now()+700;
+-    btn.click();
+-  },{capture:true,passive:false});
+-  document.addEventListener('click',e=>{
+-    // Real mouse clicks remain untouched. Synthetic click() has isTrusted=false and should pass.
+-    if(Date.now()<syntheticUntil && e.isTrusted){
+-      const btn=e.target && e.target.closest ? e.target.closest(selector) : null;
+-      if(btn){e.preventDefault();e.stopImmediatePropagation();}
+-    }
+-  },true);
+-  // Make the start screen visibly prove JS initialized.
+-  document.documentElement.dataset.touchReady='1';
++  // V28.5: bind touch actions directly to buttons. iOS Safari can fail to synthesize
++  // click events reliably inside full-screen, scrollable overlays. Do not depend on it.
++  const roots=['startOverlay','coopLobbyOverlay','shopOverlay','gameOverOverlay','mapOverlay','placementHUD'];
++  const bindButton=btn=>{
++    if(!btn || btn.dataset.v285Touch==='1') return;
++    btn.dataset.v285Touch='1';
++    btn.style.touchAction='manipulation';
++    let lastTouch=0;
++    btn.addEventListener('touchend',e=>{
++      if(btn.disabled) return;
++      e.preventDefault();
++      e.stopPropagation();
++      lastTouch=Date.now();
++      // Invoke the real action directly instead of waiting for Safari to invent a click.
++      if(typeof btn.onclick==='function') btn.onclick.call(btn,e);
++      else btn.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
++    },{passive:false});
++    btn.addEventListener('click',e=>{
++      if(Date.now()-lastTouch<800 && e.isTrusted){
++        e.preventDefault();
++        e.stopImmediatePropagation();
++      }
++    },true);
++  };
++  const bindAll=()=>{
++    for(const id of roots){
++      const root=document.getElementById(id);
++      if(root) root.querySelectorAll('button').forEach(bindButton);
++    }
++  };
++  bindAll();
++  // Shop buttons are rebuilt dynamically, so bind any newly-created buttons too.
++  const mo=new MutationObserver(bindAll);
++  mo.observe(document.body,{childList:true,subtree:true});
++  document.documentElement.dataset.touchReady='285';
+ })();
+ </script>
