@@ -1,0 +1,136 @@
+--- a/index.html
++++ b/index.html
+@@ -7,8 +7,8 @@
+ <meta name="apple-mobile-web-app-capable" content="yes" />
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="theme-color" content="#050709" />
+-<meta name="description" content="Undead Afterdark V27 - mobile-ready 1 to 4 player co-op zombie survival across Ashfall County." />
+-<title>Undead Afterdark V27 Mobile Co-op</title>
++<meta name="description" content="Undead Afterdark V28 - expanded infected and boss roster, mobile-ready 1 to 4 player co-op survival across Ashfall County." />
++<title>Undead Afterdark V28.3 Playable Mobile</title>
+ <style>
+   :root{
+     --bg:#0a0d10;
+@@ -416,6 +416,16 @@
+   #mobilePlayHint{display:none!important}
+ }
+ </style>
++
++<style id="v283-touch-fix">
++#startOverlay,#startOverlay .hero,#startOverlay .menuInner,#startOverlay .menuActions,
++#coopLobbyOverlay,#coopLobbyOverlay .coopPanel,#shopOverlay,#shopOverlay .shopPanel,
++#gameOverOverlay,#gameOverOverlay .panel,#mapOverlay,#mapOverlay #mapPanel,#placementHUD{pointer-events:auto!important;}
++#startOverlay:before,#startOverlay:after,#startOverlay .menuHazard{pointer-events:none!important;}
++#startOverlay button,#coopLobbyOverlay button,#shopOverlay button,#gameOverOverlay button,#mapOverlay button,#placementHUD button{
++  pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:none!important;user-select:none!important;position:relative;z-index:3;
++}
++</style>
+ </head>
+ <body>
+ <div id="wrap">
+@@ -445,7 +455,7 @@
+     <div class="waveTrack"><i id="waveMeterFill"></i></div>
+   </div>
+ 
+-  <div id="bossWarn">⚠ WARDEN INCOMING</div>
++  <div id="bossWarn">⚠ BOSS INCOMING</div>
+   <div id="saveToast" style="position:absolute;right:12px;bottom:12px;z-index:9;padding:8px 10px;border-radius:10px;background:rgba(10,15,18,.84);border:1px solid rgba(255,255,255,.12);font:800 11px system-ui;color:#cfe8d4;opacity:0;pointer-events:none;transition:opacity .18s">RUN SAVED</div>
+ 
+   <div class="touch">
+@@ -514,7 +524,7 @@
+             <div class="menuThreat"><i class="threatDot"></i><div>Walkers crowd and pressure routes.</div></div>
+             <div class="menuThreat"><i class="threatDot"></i><div>Runners close distance fast.</div></div>
+             <div class="menuThreat"><i class="threatDot"></i><div>Brutes absorb punishment.</div></div>
+-            <div class="menuThreat"><i class="threatDot"></i><div>First Warden arrives on wave 5. Boss waves return every 5 waves.</div></div>
++            <div class="menuThreat"><i class="threatDot"></i><div>Special infected begin on wave 7. Rotating bosses arrive every 5 waves.</div></div>
+           </div>
+         </div>
+         <div class="menuActions">
+@@ -528,9 +538,9 @@
+             <button class="startBtn" id="hostCoopBtn">HOST CO-OP</button>
+             <button class="startBtn" id="joinCoopBtn">JOIN CO-OP</button>
+           </div>
+-          <div class="menuVersion">V27.1 // MOBILE INPUT FIX + 1–4 PLAYER CO-OP</div>
++          <div class="menuVersion">V28 // INFECTED + BOSS UPDATE // 1–4 PLAYER CO-OP</div>
+         </div>
+-        <div class="smallText" id="saveInfo">V27 Co-op Alpha: play solo or host up to 3 friends. The host owns the world simulation; team cash, weapon unlocks, upgrades, and defenses are shared. Hold E near a downed teammate to revive them. Multiplayer requires an internet connection for peer signaling.</div>
++        <div class="smallText" id="saveInfo">V28: expanded special infected and rotating bosses. Play solo or host up to 3 friends. The host owns the shared simulation; cash, weapons, upgrades, defenses, waves, boss abilities, and infected stay synchronized.</div>
+       </div>
+     </div>
+   </div>
+@@ -568,7 +578,7 @@
+         </div>
+       </div>
+       <div class="shopStats" id="shopStats"></div>
+-      <div id="bossBanner" class="banner" style="display:none">⚠ WARDEN NEXT WAVE — gear up.</div>
++      <div id="bossBanner" class="banner" style="display:none">⚠ BOSS NEXT WAVE — gear up.</div>
+       <div class="shopSections" id="shopGrid"></div>
+ 
+       <div class="perkChoices" id="perkChoices">
+@@ -592,7 +602,6 @@
+   </div>
+ </div>
+ 
+-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+ <script>
+ (() => {
+   const canvas = document.getElementById('game');
+@@ -648,7 +657,7 @@
+ 
+   const state = {
+     running:false, paused:false, inShop:false, wave:1, kills:0, cash:0,
+-    zombies:[], bullets:[], drops:[], particles:[], decals:[], defenses:[], turretShots:[], keys:{}, mouse:{x:0,y:0,down:false},
++    zombies:[], bullets:[], enemyProjectiles:[], hazards:[], drops:[], particles:[], decals:[], defenses:[], turretShots:[], keys:{}, mouse:{x:0,y:0,down:false},
+     joy:{x:0,y:0,active:false}, fireHeld:false, fireAim:{x:1,y:0,active:false}, manualAimHold:false, autoFire:true, autoTarget:null, autoTargetTimer:0, sprintHeld:false,
+     buildStock:{wood:0,metal:0,steel:0,turret:0}, placing:null, placementRotation:0,
+     spawned:0, spawnTarget:0, spawnTimer:0, waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+@@ -667,7 +676,7 @@
+ 
+ 
+ 
+-  // V27 peer-to-peer co-op. One browser is authoritative host; up to three peers send input.
++  // V28 peer-to-peer co-op. One browser is authoritative host; up to three peers send input.
+   const COOP_COLORS=['#d6b06d','#67a8d8','#7fc383','#c878c8'];
+   const net={
+     mode:'single',peer:null,hostConn:null,conns:new Map(),remotePlayers:new Map(),renderPlayers:[],
+@@ -676,7 +685,7 @@
+   };
+   const sanitizeName=v=>(String(v||'SURVIVOR').replace(/[^a-z0-9 _-]/gi,'').trim().slice(0,14)||'SURVIVOR').toUpperCase();
+   const makeRoomCode=()=>{const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=chars[Math.floor(Math.random()*chars.length)];return s};
+-  const peerIdFor=code=>'uad-v27-'+String(code||'').toLowerCase();
++  const peerIdFor=code=>'uad-v28-'+String(code||'').toLowerCase();
+   function coopCount(){return net.mode==='host'?1+[...net.remotePlayers.values()].filter(p=>!p.disconnected).length:(net.mode==='client'?Math.max(1,net.renderPlayers.filter(p=>!p.disconnected).length):1)}
+   function partyPlayers(){return [player,...net.remotePlayers.values()].filter(p=>!p.disconnected&&!p.eliminated)}
+   function alivePartyPlayers(){return partyPlayers().filter(p=>!p.downed&&p.hp>0)}
+@@ -690,7 +699,7 @@
+   function getDamageFor(p){const w=weapons[p.weapon]||weapons.sidearm;return w.damage*(1+0.15*state.upgrades.damage)}
+   function getRateFor(p){let r=(weapons[p.weapon]||weapons.sidearm).rate*(1+0.10*state.upgrades.fireRate);if(state.perks.adrenaline&&p.hp/p.maxHp<.3)r*=1.35;return r}
+   function getReloadFor(p){let r=(weapons[p.weapon]||weapons.sidearm).reload/(1+0.15*state.upgrades.reload);if(state.perks.quick)r*=.65;return r}
+-  function getSpeedFor(p){let s=(p.baseSpeed||220)*(1+0.05*state.upgrades.move);if(state.perks.runner)s*=1.12;if(p.weapon==='lmg')s*=.90;return s}
++  function getSpeedFor(p){let s=(p.baseSpeed||220)*(1+0.05*state.upgrades.move);if(state.perks.runner)s*=1.12;if(p.weapon==='lmg')s*=.90;if((p.parasiteTimer||0)>0)s*=.75;if((p.grabTimer||0)>0)s*=.28;return s}
+   function makeRemotePlayer(id,name,slot){
+     const off=[[0,0],[52,0],[-52,0],[0,52]][slot]||[0,0];
+     return {id,name:sanitizeName(name),slot,color:COOP_COLORS[slot]||'#aaa',x:player.x+off[0],y:player.y+off[1],r:14,hp:100,maxHp:100,armor:0,maxArmor:0,baseSpeed:220,weapon:'sidearm',ammo:12,reloading:false,reloadTimer:0,fireCd:0,aimX:1,aimY:0,animT:0,moveMag:0,stamina:100,maxStamina:100,staminaDelay:0,downed:false,downedTimer:0,reviveProgress:0,eliminated:false,disconnected:false,input:{mx:0,my:0,aimX:1,aimY:0,fire:false,sprint:false,revive:false,reload:false,weapon:'sidearm'}};
+@@ -715,7 +724,31 @@
+     peer.on('open',onOpen);peer.on('error',err=>{console.warn('Peer error',err);lobbyMessage('NETWORK ERROR: '+String(err.type||err.message||err).toUpperCase())});
+     return peer;
+   }
++  let peerLoadState='idle';
++  let peerLoadWaiters=[];
++  function ensurePeerLibrary(done){
++    if(window.Peer){done(true);return}
++    peerLoadWaiters.push(done);
++    if(peerLoadState==='loading')return;
++    peerLoadState='loading';
++    const script=document.createElement('script');
++    script.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
++    script.async=true;
++    script.onload=()=>{peerLoadState='ready';const waiters=peerLoadWaiters.splice(0);for(const fn of waiters)fn(!!window.Peer)};
++    script.onerror=()=>{peerLoadState='failed';const waiters=peerLoadWaiters.splice(0);for(const fn of waiters)fn(false)};
++    document.head.appendChild(script);
++  }
+   function hostCoop(){
++    const pendingName=sanitizeName(document.getElementById('coopName').value);
++    destroyNetwork();net.name=pendingName;showLobby('------',true);lobbyMessage('LOADING MULTIPLAYER…');
++    ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}hostCoopReady()});
++
