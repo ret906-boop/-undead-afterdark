@@ -1,0 +1,106 @@
+name: Build Undead Afterdark iOS Project
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-ios-project.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios-project:
+    runs-on: macos-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: mobile/package.json
+
+      - name: Embed verified V28.6 game
+        shell: bash
+        run: |
+          mkdir -p mobile/www
+          curl --fail --location --retry 5 \
+            'https://ret906-boop.github.io/-undead-afterdark/?ios=v286-322635ff' \
+            -o mobile/www/index.html
+          echo '322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859  mobile/www/index.html' | shasum -a 256 -c -
+
+      - name: Install Capacitor 8
+        working-directory: mobile
+        run: npm install
+
+      - name: Generate native iOS project
+        working-directory: mobile
+        run: |
+          rm -rf ios
+          npx cap add ios
+          npx cap sync ios
+
+      - name: Configure iPhone game presentation
+        shell: bash
+        run: |
+          PLIST='mobile/ios/App/App/Info.plist'
+          /usr/libexec/PlistBuddy -c 'Delete :UISupportedInterfaceOrientations' "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations array' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationLandscapeLeft' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations:1 string UIInterfaceOrientationLandscapeRight' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Delete :UISupportedInterfaceOrientations~ipad' "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations~ipad array' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations~ipad:0 string UIInterfaceOrientationLandscapeLeft' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Add :UISupportedInterfaceOrientations~ipad:1 string UIInterfaceOrientationLandscapeRight' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Delete :UIStatusBarHidden' "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :UIStatusBarHidden bool true' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Delete :UIViewControllerBasedStatusBarAppearance' "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :UIViewControllerBasedStatusBarAppearance bool false' "$PLIST"
+          /usr/libexec/PlistBuddy -c 'Delete :ITSAppUsesNonExemptEncryption' "$PLIST" 2>/dev/null || true
+          /usr/libexec/PlistBuddy -c 'Add :ITSAppUsesNonExemptEncryption bool false' "$PLIST"
+
+      - name: Verify native project compiles
+        shell: bash
+        run: |
+          cd mobile
+          if [ -e ios/App/App.xcworkspace ]; then
+            xcodebuild \
+              -workspace ios/App/App.xcworkspace \
+              -scheme App \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' \
+              CODE_SIGNING_ALLOWED=NO \
+              build
+          else
+            xcodebuild \
+              -project ios/App/App.xcodeproj \
+              -scheme App \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' \
+              CODE_SIGNING_ALLOWED=NO \
+              build
+          fi
+
+      - name: Package Xcode project
+        shell: bash
+        run: |
+          cd mobile
+          rm -rf node_modules
+          ditto -c -k --sequesterRsrc --keepParent . ../UndeadAfterdark_iOS_Project.zip
+
+      - name: Upload iOS project
+        uses: actions/upload-artifact@v4
+        with:
+          name: UndeadAfterdark-iOS-Xcode-Project
+          path: UndeadAfterdark_iOS_Project.zip
+          if-no-files-found: error
+          retention-days: 30
