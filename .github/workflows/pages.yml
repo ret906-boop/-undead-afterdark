@@ -46,8 +46,38 @@ jobs:
       - name: Apply and verify V27.1 mobile co-op input fix
         shell: bash
         run: |
-          tr -d '[:space:]' < tools/v27_mobile_input.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v27_mobile_input.patch
-          patch --batch --forward site/index.html < /tmp/v27_mobile_input.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('site/index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace("    overflow:hidden;\n    touch-action:none;\n  }\n  #wrap{position:relative;width:100vw;height:100vh;background:#080a0c;}\n  canvas{display:block;width:100%;height:100%;background:#12161a;}","    overflow:hidden;\n    touch-action:manipulation;\n  }\n  #wrap{position:relative;width:100vw;height:100vh;background:#080a0c;}\n  canvas{display:block;width:100%;height:100%;background:#12161a;touch-action:none;}",1)
+          s=s.replace('#startOverlay{\n  overflow:hidden;','#startOverlay{\n  z-index:50;\n  overflow:hidden;',1)
+          s=s.replace(".coopInput{width:100%;box-sizing:border-box;background:#0d1316;border:1px solid rgba(255,255,255,.14);color:#eef4f6;border-radius:8px;padding:12px 13px;font:800 13px system-ui;letter-spacing:.08em;text-transform:uppercase;outline:none}",".coopInput{width:100%;box-sizing:border-box;background:#0d1316;border:1px solid rgba(255,255,255,.14);color:#eef4f6;border-radius:8px;padding:12px 13px;font:800 16px system-ui;letter-spacing:.08em;text-transform:uppercase;outline:none;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}",1)
+          s=s.replace('            <input id="coopName" class="coopInput" maxlength="14" value="SURVIVOR" aria-label="Player name">\n            <input id="coopCode" class="coopInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code">','            <input id="coopName" class="coopInput" type="text" inputmode="text" maxlength="14" value="SURVIVOR" aria-label="Player name" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">\n            <input id="coopCode" class="coopInput" type="text" inputmode="text" maxlength="6" placeholder="TAP TO TYPE CODE" aria-label="Room code" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">',1)
+          s=s.replace("  addEventListener('keydown',e=>{\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;","  addEventListener('keydown',e=>{\n    const tag=(e.target&&e.target.tagName||'').toLowerCase();\n    if(tag==='input'||tag==='textarea'||tag==='select'||(e.target&&e.target.isContentEditable))return;\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;",1)
+          anchor="  document.getElementById('continueBtn').onclick=()=>{destroyNetwork();ensureAudio();loadSavedRun()};"
+          block="""  // Mobile-safe co-op text entry. Gameplay owns touch gestures only on the canvas; menu inputs remain native controls.
+          const coopNameInput=document.getElementById('coopName');
+          const coopCodeInput=document.getElementById('coopCode');
+          for(const el of [coopNameInput,coopCodeInput]){
+            if(!el)continue;
+            for(const ev of ['touchstart','touchend','pointerdown','pointerup','click'])el.addEventListener(ev,e=>e.stopPropagation(),{passive:true});
+          }
+          if(coopCodeInput){
+            coopCodeInput.addEventListener('input',()=>{
+              const clean=coopCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+              if(coopCodeInput.value!==clean)coopCodeInput.value=clean;
+            });
+            coopCodeInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});
+            coopCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();coopCodeInput.blur();joinCoop()}});
+          }
+          if(coopNameInput)coopNameInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});
+
+          """+anchor
+          s=s.replace(anchor,block,1)
+          s=s.replace('V27 // MOBILE + 1–4 PLAYER CO-OP // PUBLIC ALPHA','V27.1 // MOBILE INPUT FIX + 1–4 PLAYER CO-OP',1)
+          p.write_text(s,encoding='utf-8')
+          PY
           echo 'c80c848e3a0c8ea9d17902c07744b3332c366a44e2df77a25ee7c542bffbc83c  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
