@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V27.1 Mobile Co-op
+name: Deploy Undead Afterdark V27.2 Mobile Co-op
 
 on:
   push:
@@ -80,6 +80,30 @@ jobs:
           p.write_text(s,encoding='utf-8')
           PY
           echo 'c80c848e3a0c8ea9d17902c07744b3332c366a44e2df77a25ee7c542bffbc83c  site/index.html' | sha256sum -c -
+
+      - name: Apply and verify V27.2 mobile button fix
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('site/index.html')
+          s=p.read_text(encoding='utf-8')
+          repls=[
+          ("#startOverlay{\n  z-index:50;\n  overflow:hidden;","#startOverlay{\n  z-index:20;\n  overflow:hidden;"),
+          ("#coopLobbyOverlay{z-index:40;","#coopLobbyOverlay{z-index:80;"),
+          ("    touch-action:manipulation;\n  }\n  #wrap","    touch-action:auto;\n  }\n  #wrap"),
+          ("  .startBtn,.nextBtn{\n    border:0;border-radius:14px;padding:16px 20px;font-size:18px;font-weight:900;\n    background:var(--accent);color:white;cursor:pointer;\n  }","  .startBtn,.nextBtn{\n    border:0;border-radius:14px;padding:16px 20px;font-size:18px;font-weight:900;\n    background:var(--accent);color:white;cursor:pointer;\n    touch-action:manipulation;pointer-events:auto;-webkit-tap-highlight-color:transparent;\n  }"),
+          ("  for(const el of [coopNameInput,coopCodeInput]){\n    if(!el)continue;\n    for(const ev of ['touchstart','touchend','pointerdown','pointerup','click'])el.addEventListener(ev,e=>e.stopPropagation(),{passive:true});\n  }\n",""),
+          ("  document.getElementById('continueBtn').onclick=()=>{destroyNetwork();ensureAudio();loadSavedRun()};\n  document.getElementById('startBtn').onclick=()=>{destroyNetwork();ensureAudio();document.getElementById('startOverlay').style.display='none';reset()};\n  document.getElementById('hostCoopBtn').onclick=()=>{ensureAudio();hostCoop()};\n  document.getElementById('joinCoopBtn').onclick=()=>{ensureAudio();joinCoop()};\n  document.getElementById('coopStartBtn').onclick=()=>{if(net.mode!=='host')return;closeLobby();document.getElementById('startOverlay').style.display='none';reset();net.starting=true;for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()};\n  document.getElementById('coopLeaveBtn').onclick=()=>{destroyNetwork();ui.coopLobbyOverlay.style.display='none'};\n  document.getElementById('saveNowBtn').onclick=()=>{if(net.mode!=='client')saveGame(true)};\n  document.getElementById('nextWaveBtn').onclick=()=>{if(net.mode==='client')return;currentPerks=[];state.wave++;startWave();saveGame(false)};\n  document.getElementById('restartBtn').onclick=()=>{document.getElementById('gameOverOverlay').style.display='none';if(net.mode==='client'){destroyNetwork();document.getElementById('startOverlay').style.display='flex'}else{reset();if(net.mode==='host'){for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()}}};\n","  function bindMenuTap(id,fn){\n    const el=document.getElementById(id);if(!el)return;let touchStamp=0;\n    el.addEventListener('touchend',e=>{e.preventDefault();e.stopPropagation();touchStamp=performance.now();fn(e)},{passive:false});\n    el.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(performance.now()-touchStamp<650)return;fn(e)});\n  }\n  bindMenuTap('continueBtn',()=>{destroyNetwork();ensureAudio();loadSavedRun()});\n  bindMenuTap('startBtn',()=>{destroyNetwork();ensureAudio();document.getElementById('startOverlay').style.display='none';reset()});\n  bindMenuTap('hostCoopBtn',()=>{ensureAudio();hostCoop()});\n  bindMenuTap('joinCoopBtn',()=>{ensureAudio();joinCoop()});\n  bindMenuTap('coopStartBtn',()=>{if(net.mode!=='host')return;closeLobby();document.getElementById('startOverlay').style.display='none';reset();net.starting=true;for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()});\n  bindMenuTap('coopLeaveBtn',()=>{destroyNetwork();ui.coopLobbyOverlay.style.display='none'});\n  bindMenuTap('saveNowBtn',()=>{if(net.mode!=='client')saveGame(true)});\n  bindMenuTap('nextWaveBtn',()=>{if(net.mode==='client')return;currentPerks=[];state.wave++;startWave();saveGame(false)});\n  bindMenuTap('restartBtn',()=>{document.getElementById('gameOverOverlay').style.display='none';if(net.mode==='client'){destroyNetwork();document.getElementById('startOverlay').style.display='flex'}else{reset();if(net.mode==='host'){for(const c of net.conns.values())if(c.open)c.send({t:'start'});broadcastSnapshot()}}});\n"),
+          ("V27.1 // MOBILE INPUT FIX + 1–4 PLAYER CO-OP","V27.2 // MOBILE BUTTON + INPUT FIX + 1–4 PLAYER CO-OP"),
+          ("<title>Undead Afterdark V27 Mobile Co-op</title>","<title>Undead Afterdark V27.2 Mobile Co-op</title>"),
+          ]
+          for old,new in repls:
+              assert old in s, old[:80]
+              s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          echo '7bb3c9e1c52cff59f5db8879b3644599d2a0a5ab0216252d0ee0cac6bc27c3dd  site/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
