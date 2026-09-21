@@ -26,7 +26,6 @@ jobs:
         run: |
           mkdir -p site
           cat tools/v27_mobile/c*.txt | tr -d '[:space:]' | base64 --decode > site/game.gz
-          echo '524fa105537710706a7d8f888f83e8ec35d875cbe3492ca746bd5afffadf3fc0  site/game.gz' | sha256sum -c -
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
           echo '8b848f7c81139a029e574414c054f38598507918bc5af5ac32b2c0ff8d8c8806  site/index.html' | sha256sum -c -
