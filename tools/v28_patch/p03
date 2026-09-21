@@ -1,0 +1,97 @@
+d];
++    const r=boss?spec.r:spec.r[0]+Math.random()*(spec.r[1]-spec.r[0]);
+     const biome=getChunk(Math.floor(x/CHUNK),Math.floor(y/CHUNK)).biome;
+     const hueBase={CITY:103,FOREST:116,SWAMP:92,DESERT:72,INDUSTRIAL:128,RURAL:82}[biome]||108;
+-    const hp=baseHp*stats.hp*(boss?1:(.88+Math.random()*.28))*(1+Math.max(0,coopCount()-1)*.10);
+-    state.zombies.push({
+-      x,y,r:stats.r,hp,maxHp:hp,
+-      speed:(56+Math.min(78,state.wave*2.15)+Math.random()*15)*stats.speed,
+-      damage:(8+state.wave*.9)*stats.damage,
+-      boss,kind,biome,hitCd:0,catchup:1,hitFlash:0,
+-      hue:boss?0:hueBase+(Math.random()-.5)*18,
+-      swing:Math.random()*Math.PI*2,animT:Math.random()*Math.PI*2,attackAnim:0,moveAmt:1
+-    });
+-    state.spawned++;
++    const coopMult=boss?(1+Math.max(0,coopCount()-1)*.18):(1+Math.max(0,coopCount()-1)*.10);
++    const variance=boss?1:(.88+Math.random()*.28);
++    const hp=baseHp*spec.hp*variance*coopMult;
++    const z={x,y,r,hp,maxHp:hp,speed:(56+Math.min(78,state.wave*2.15)+Math.random()*15)*spec.speed,baseSpeedMult:spec.speed,damage:(8+state.wave*.9)*spec.damage,boss,kind,biome,hitCd:0,catchup:1,hitFlash:0,hue:boss?0:hueBase+(Math.random()-.5)*18,swing:Math.random()*Math.PI*2,animT:Math.random()*Math.PI*2,attackAnim:0,moveAmt:1,summoned:!!opts.summoned,rewardScale:opts.rewardScale??(opts.summoned?.5:1),abilityCd:1.5+Math.random()*2.5,secondaryCd:3+Math.random()*2,voiceCd:0,defHitCd:0,facing:0,phase:1,flankSign:Math.random()<.5?-1:1};
++    if(kind==='riot')z.shieldHp=z.maxHp*1.10;
++    if(kind==='screamer')z.screamUsed=false;
++    if(kind==='revenant')z.revenantDown=false;
++    state.zombies.push(z);return z;
++  }
++  function spawnZombieNear(kind,cx,cy,summoned=true,rewardScale=.5){
++    let x=cx,y=cy;for(let tries=0;tries<12;tries++){const a=Math.random()*Math.PI*2,d=70+Math.random()*95;x=cx+Math.cos(a)*d;y=cy+Math.sin(a)*d;if(!collidesMap(x,y,24))break}
++    return createZombie(kind,x,y,{summoned,rewardScale});
++  }
++  function spawnZombie(){
++    const anchor=partySpawnAnchor(),ang=Math.random()*Math.PI*2,dist=Math.max(W,H)*0.60+170+Math.random()*220;
++    let x=anchor.x+Math.cos(ang)*dist,y=anchor.y+Math.sin(ang)*dist;
++    for(let tries=0;tries<12&&collidesMap(x,y,30);tries++){const a=Math.random()*Math.PI*2;x=anchor.x+Math.cos(a)*dist;y=anchor.y+Math.sin(a)*dist}
++    const boss=isBossWave(state.wave)&&state.spawned===state.spawnTarget-1;
++    const kind=boss?bossKindForWave(state.wave):chooseZombieKind(state.wave);
++    createZombie(kind,x,y,{boss});state.spawned++;
+   }
+-
+ 
+   function relocateZombieNearPlayer(z){
+     const anchor=partySpawnAnchor(),screenEdge=Math.hypot(W/2,H/2),minDist=screenEdge+140,maxDist=minDist+260;let x=z.x,y=z.y;
+@@ -1867,11 +1934,9 @@
+   }
+ 
+   function zombieKillReward(z){
+-    if(z.boss) return 150 + state.wave*10;
+-    if(z.kind==='brute') return 25 + state.wave*2;
+-    if(z.kind==='runner') return 12 + state.wave;
+-    if(z.kind==='crawler') return 10 + state.wave;
+-    return 8 + state.wave;
++    if(z.boss)return Math.round((150+state.wave*10)*(z.rewardScale??1));
++    const spec=ENEMY_SPECS[z.kind]||ENEMY_SPECS.walker;
++    return Math.max(1,Math.round((spec.rewardBase+state.wave*(spec.rewardWave||1))*(z.rewardScale??1)));
+   }
+ 
+   function rewardZombieKill(z){
+@@ -1881,6 +1946,7 @@
+   }
+ 
+   function spawnZombieDrops(z){
++    if(z.summoned)return;
+     if(z.boss){
+       makeDrop('money',z.x-18,z.y,550+state.wave*30,true);
+       const support=Math.random()<.55?'ammo':'health';
+@@ -2001,6 +2067,58 @@
+ 
+   function nearestEnemy(){return nearestVisibleEnemy()}
+ 
++  function nearestDefenseTarget(z,maxRange=700){let best=null,bd=maxRange*maxRange;for(const d of state.defenses){if(d.dead)continue;const dd=(d.x-z.x)**2+(d.y-z.y)**2;if(dd<bd){bd=dd;best=d}}return best}
++  function partyId(p){if(p===player)return 'host';return p.id||'remote'}
++  function angleDiff(a,b){let d=(a-b+Math.PI)%(Math.PI*2)-Math.PI;return Math.abs(d)}
++  function launchEnemyProjectile(z,target,type='acid',speed=310,damage=12){const dx=target.x-z.x,dy=target.y-z.y,l=Math.hypot(dx,dy)||1;state.enemyProjectiles.push({x:z.x,y:z.y,vx:dx/l*speed,vy:dy/l*speed,r:type==='rock'?9:7,life:type==='rock'?1.7:1.9,type,damage,splash:type==='rock'?55:0})}
++  function addHazard(x,y,type='acid',r=55,life=4,dps=8){state.hazards.push({x,y,type,r,life,maxLife:life,dps,tickCd:0})}
++  function areaDamage(x,y,r,damage){for(const p of alivePartyPlayers()){if(Math.hypot(p.x-x,p.y-y)<=r+p.r)damagePartyMember(p,damage)}}
++  function updateEnemyEffects(dt){
++    for(const h of state.hazards){h.life-=dt;h.tickCd-=dt;if(h.tickCd<=0){h.tickCd=.25;for(const p of alivePartyPlayers())if(Math.hypot(p.x-h.x,p.y-h.y)<h.r+p.r)damagePartyMember(p,h.dps*.25)}}
++    state.hazards=state.hazards.filter(h=>h.life>0);
++    for(const q of state.enemyProjectiles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.life-=dt;let impact=pointHitsMap(q.x,q.y)||q.life<=0;for(const p of alivePartyPlayers()){if(Math.hypot(p.x-q.x,p.y-q.y)<p.r+q.r){if(q.type!=='rock')damagePartyMember(p,q.damage);impact=true;break}}if(impact&&!q.impacted){q.impacted=true;if(q.type==='acid')addHazard(q.x,q.y,'acid',55,4,8);if(q.type==='rock')areaDamage(q.x,q.y,q.splash||55,q.damage)}if(impact)q.life=0}
++    state.enemyProjectiles=state.enemyProjectiles.filter(q=>q.life>0);
++  }
++  function explodeBloater(z){const radius=100;areaDamage(z.x,z.y,radius,20+state.wave*.5);for(const d of state.defenses)if(!d.dead&&Math.hypot(d.x-z.x,d.y-z.y)<radius+Math.max(d.w,d.h)*.5)damageDefense(d,35);for(const o of state.zombies){if(o===z||o.dead)continue;if(Math.hypot(o.x-z.x,o.y-z.y)<radius+o.r)o.hp-=35+state.wave*2}state.screenShake=Math.max(state.screenShake,1.2);for(let i=0;i<16;i++)state.particles.push({type:'blood',x:z.x,y:z.y,vx:(Math.random()-.5)*220,vy:(Math.random()-.5)*220,life:.45,max:.45,r:2+Math.random()*4})}
++  function permanentZombieDeath(z){if(z.dead)return;z.dead=true;sfxKill(z);if(z.kind==='bloater')explodeBloater(z);bloodBurst(z.x,z.y,z.boss?24:(['brute','breaker','bloater','riot'].includes(z.kind)?14:9),z.boss?190:125);addBloodDecals(z);state.screenShake=Math.max(state.screenShake,z.boss?1.5:(['brute','breaker','bloater'].includes(z.kind)?.75:.35));state.kills++;rewardZombieKill(z);spawnZombieDrops(z);if(state.perks.vampire&&Math.random()<.10)player.hp=Math.min(player.maxHp,player.hp+5)}
++  function resolveZombieZeroHp(z){if(z.kind==='revenant'&&!z.revived&&!z.revenantDown){z.revenantDown=true;z.reviveTimer=2.2;z.hp=z.maxHp*.30;z.moveAmt=0;z.hitFlash=.16;bloodBurst(z.x,z.y,8,95);return}permanentZombieDeath(z)}
++  function bulletDamageToZombie(z,b){let mult=1;const incoming=Math.atan2(-b.vy,-b.vx),front=angleDiff(z.facing||0,incoming);if(z.kind==='riot'&&(z.shieldHp||0)>0&&front<1.22){mult=.28;z.shieldHp-=b.damage;if(z.shieldHp<=0)z.shieldHp=0}else if(z.kind==='riot'&&front>2.3)mult=1.15;if(z.kind==='juggernaut'){mult=front<1.20?.25:(front>2.35?1.40:.85)}if(z.kind==='stalker')z.revealTimer=2.5;if(z.kind==='harvester'&&z.grabTargetId){for(const p of partyPlayers())if(partyId(p)===z.grabTargetId)p.grabTimer=0;z.grabTargetId=null}return b.damage*mult}
++  function summonKinds(z,kinds,rewardScale=.5){for(const k of kinds)spawnZombieNear(k,z.x,z.y,true,rewardScale)}
++  function updateBossPhase(z){if(z.kind!=='patientzero')return;const ratio=z.hp/z.maxHp;const next=ratio<=.30?3:(ratio<=.65?2:1);if(next!==z.phase){z.phase=next;if(next===2){z.speed*=.80;z.damage*=1.15;z.r=62}else if(next===3){z.speed*=1.55;z.damage*=1.087;z.r=68;if(!z.phase3Summoned){z.phase3Summoned=true;summonKinds(z,['runner','brute','spitter','hunter'],.35)}}}}
++  function updateZombieSpecial(z,dt,target){
++    z.abilityCd=Math.max(0,(z.abilityCd||0)-dt);z.secondaryCd=Math.max(0,(z.secondaryCd||0)-dt);z.revealTimer=Math.max(0,(z.revealTimer||0)-dt);updateBossPhase(z);
++    if(z.kind==='revenant'&&z.revenantDown){z.reviveTimer-=dt;if(z.reviveTimer<=0){z.revenantDown=false;z.revived=true;z.hp=Math.max(z.hp,z.maxHp*.45);z.speed*=1.12}return {skip:true,target}}
++    const dx=target.x-z.x,dy=target.y-z.y,d=Math.hypot(dx,dy)||1;
++    if(z.kind==='screamer'){
++      if(z.screamWindup>0){z.screamWindup-=dt;if(z.screamWindup<=0&&!z.screamUsed){z.screamUsed=true;const n=[0,3,4,5,6][Math.min(4,coopCount())]||3;const pool=state.wave>=10?['walker','runner']:['walker','walker','runner'];const kinds=[];for(let i=0;i<n;i++)kinds.push(pool[Math.floor(Math.random()*pool.length)]);summonKinds(z,kinds,.5);state.screenShake=Math.max(state.screenShake,.8)}return {skip:true,target}}
++      if(!z.screamUsed&&z.abilityCd<=0&&d<430){z.screamWindup=1.35;z.abilityCd=99;return {skip:true,target}}
++    }
++    if(z.kind==='spitter'){
++      if(z.abilityCd<=0&&d<520){launchEnemyProjectile(z,target,'acid',310,8+state.wave*.45);z.abilityCd=3.8}
++      if(d<170)return {target:{x:z.x-dx,y:z.y-dy,r:target.r},speedScale:1.05};if(d<475)return {skip:true,target};
++    }
++    if(z.kind==='hunter'||z.kind==='butcher'||z.kind==='juggernaut'||z.kind==='harvester')
