@@ -1,0 +1,122 @@
+{
++      if(z.chargeTime>0){z.chargeTime-=dt;return {manual:{x:z.chargeX,y:z.chargeY},speedScale:z.kind==='hunter'?2.6:(z.kind==='harvester'?2.2:2.15),touchMult:z.kind==='hunter'?1.35:1.25,target}}
++      const min=z.kind==='hunter'?140:120,max=z.kind==='hunter'?270:430;
++      const cd=z.kind==='hunter'?4:(z.kind==='harvester'?4.8:(z.kind==='butcher'?6.5:7));
++      if(z.abilityCd<=0&&d>min&&d<max){z.chargeTime=z.kind==='hunter'?.55:.9;z.chargeX=dx/d;z.chargeY=dy/d;z.abilityCd=cd;return {manual:{x:z.chargeX,y:z.chargeY},speedScale:2.2,touchMult:1.25,target}}
++    }
++    if(z.kind==='breaker'){const def=nearestDefenseTarget(z,700);if(def)return {target:{x:def.x,y:def.y,r:Math.max(def.w,def.h)*.5,_def:def}}}
++    if(z.kind==='stalker'&&d>150){const a=Math.atan2(dy,dx)+z.flankSign*.72;return {target:{x:target.x-Math.cos(a)*90,y:target.y-Math.sin(a)*90,r:target.r}}}
++    if(z.kind==='mother'){
++      const summonCap=[0,6,8,10,12][Math.min(4,coopCount())]||6,aliveSummoned=state.zombies.filter(o=>!o.dead&&o.summoned).length;
++      if(z.abilityCd<=0&&aliveSummoned<summonCap){summonKinds(z,['crawler','crawler','walker'].slice(0,Math.max(0,summonCap-aliveSummoned)),.35);z.abilityCd=7}
++      const ratio=z.hp/z.maxHp;if(ratio<.70&&!z.spawn70){z.spawn70=true;summonKinds(z,['runner','runner','runner'],.35)}if(ratio<.40&&!z.spawn40){z.spawn40=true;summonKinds(z,['runner','runner','runner'],.35)}
++    }
++    if(z.kind==='juggernaut'&&d>280&&z.secondaryCd<=0){launchEnemyProjectile(z,target,'rock',285,30);z.secondaryCd=5.5}
++    if(z.kind==='patientzero'){
++      if(z.phase===1&&z.secondaryCd<=0){summonKinds(z,['runner','runner'],.35);z.secondaryCd=12}
++      if(z.phase>=2&&z.abilityCd<=0){launchEnemyProjectile(z,target,'acid',330,10+state.wave*.4);z.abilityCd=z.phase===3?3.2:4}
++      if(z.phase>=2&&z.secondaryCd<=0&&d<150){areaDamage(z.x,z.y,120,38);z.secondaryCd=7;state.screenShake=Math.max(state.screenShake,1.4)}
++    }
++    return {target};
++  }
++
+   function update(dt){
+     if(net.mode==='client'){updateClientPrediction(dt);syncUI();return}
+     if(!state.running || state.paused) return;
+@@ -2010,7 +2128,7 @@
+     player.dashCd=Math.max(0,player.dashCd-dt);
+     player.invuln=Math.max(0,player.invuln-dt);
+     player.shotKick=Math.max(0,player.shotKick-dt);
+-    player.hurtAnim=Math.max(0,player.hurtAnim-dt);
++    player.hurtAnim=Math.max(0,player.hurtAnim-dt);for(const p of partyPlayers()){p.parasiteTimer=Math.max(0,(p.parasiteTimer||0)-dt);p.grabTimer=Math.max(0,(p.grabTimer||0)-dt);}
+     state.screenShake=Math.max(0,state.screenShake-dt*4.8);
+     state.hitMarker=Math.max(0,state.hitMarker-dt);
+     state.waveBanner=Math.max(0,state.waveBanner-dt);
+@@ -2083,34 +2201,27 @@
+ 
+     updateDrops(dt);
+     updateParticles(dt);
++    updateEnemyEffects(dt);
+     updateDefenses(dt);
+     recycleFarZombies();
+ 
+     for(const z of state.zombies){
+-      z.hitCd=Math.max(0,z.hitCd-dt);
+-      z.voiceCd=Math.max(0,(z.voiceCd||0)-dt);
+-      z.hitFlash=Math.max(0,(z.hitFlash||0)-dt);
+-      z.attackAnim=Math.max(0,(z.attackAnim||0)-dt);
+-      const pursuitSpeed=z.speed*(z.catchup||1);
+-      const target=nearestPartyTarget(z);
+-      const steer=zombieMoveVector(z,dt,target);
+-      z.defHitCd=Math.max(0,(z.defHitCd||0)-dt);
+-      const oldZX=z.x,oldZY=z.y;
+-      const moveDist=pursuitSpeed*dt;
+-      const stepX=steer.x*moveDist,stepY=steer.y*moveDist;
++      z.hitCd=Math.max(0,z.hitCd-dt);z.voiceCd=Math.max(0,(z.voiceCd||0)-dt);z.hitFlash=Math.max(0,(z.hitFlash||0)-dt);z.attackAnim=Math.max(0,(z.attackAnim||0)-dt);z.defHitCd=Math.max(0,(z.defHitCd||0)-dt);
++      let target=nearestPartyTarget(z);const special=updateZombieSpecial(z,dt,target);target=special.target||target;if(special.skip){z.moveAmt=0;continue}
++      const pursuitSpeed=z.speed*(z.catchup||1)*(special.speedScale||1);z.facing=Math.atan2(target.y-z.y,target.x-z.x);
++      let steer;if(special.manual){steer={x:special.manual.x,y:special.manual.y,pad:Math.max(10,z.r*.56)}}else steer=zombieMoveVector(z,dt,target);
++      const oldZX=z.x,oldZY=z.y,moveDist=pursuitSpeed*dt,stepX=steer.x*moveDist,stepY=steer.y*moveDist;
+       const defenseBlock=findDefenseCollision(z.x+stepX,z.y+stepY,steer.pad);
+       if(defenseBlock){
+-        if(z.defHitCd<=0){z.defHitCd=z.boss?.28:(z.kind==='brute'?.36:.52);damageDefense(defenseBlock,z.damage*(z.boss?1.35:(z.kind==='brute'?1.15:.72)));z.attackAnim=.23;if((z.voiceCd||0)<=0&&Math.random()<.45){sfxZombieEvent(z,'attack');z.voiceCd=.8+Math.random()*1.1}}
++        if(z.kind==='leaper'&&z.abilityCd<=0){const jump=155,nx=z.x+steer.x*jump,ny=z.y+steer.y*jump;if(!collidesMap(nx,ny,z.r*.7)&&!findDefenseCollision(nx,ny,z.r*.65)){z.x=nx;z.y=ny;z.abilityCd=4.5;z.leapFlash=.35}else if(z.defHitCd<=0){z.defHitCd=.5;damageDefense(defenseBlock,z.damage*.72)}}
++        else if(z.defHitCd<=0){const mult=z.kind==='breaker'?3.2:(z.boss?1.35:(z.kind==='brute'?1.15:.72));z.defHitCd=z.kind==='breaker'?.65:(z.boss?.28:(z.kind==='brute'?.36:.52));damageDefense(defenseBlock,z.damage*mult);z.attackAnim=.23;if((z.voiceCd||0)<=0&&Math.random()<.45){sfxZombieEvent(z,'attack');z.voiceCd=.8+Math.random()*1.1}}
+       }else tryZombieAvoidanceStep(z,steer,moveDist);
+-      const actualMove=Math.hypot(z.x-oldZX,z.y-oldZY);
+-      const expected=Math.max(.001,pursuitSpeed*dt);
+-      z.moveAmt=Math.min(1,actualMove/expected);
+-      if(actualMove<expected*.18){z.stuckTime=(z.stuckTime||0)+dt}else z.stuckTime=Math.max(0,(z.stuckTime||0)-dt*2);
+-      if(z.stuckTime>.24){z.nav=null;z.navTimer=0;z.navSide=-(z.navSide||1);z.stuckTime=0}
+-      z.animT += dt*(1.2+(3.2+pursuitSpeed/42)*(.15+.85*z.moveAmt));
+-      const touchDist=Math.hypot(target.x-z.x,target.y-z.y);
+-      if(touchDist<z.r+target.r+2 && z.hitCd<=0 && (target.invuln||0)<=0 && !target.downed && !target.eliminated){
+-        z.hitCd=.7;z.attackAnim=.23;if((z.voiceCd||0)<=0&&Math.random()<.72){sfxZombieEvent(z,'attack');z.voiceCd=.9+Math.random()*1.2}damagePartyMember(target,z.damage);
++      const actualMove=Math.hypot(z.x-oldZX,z.y-oldZY),expected=Math.max(.001,pursuitSpeed*dt);z.moveAmt=Math.min(1,actualMove/expected);if(actualMove<expected*.18){z.stuckTime=(z.stuckTime||0)+dt}else z.stuckTime=Math.max(0,(z.stuckTime||0)-dt*2);if(z.stuckTime>.24){z.nav=null;z.navTimer=0;z.navSide=-(z.navSide||1);z.stuckTime=0}z.animT+=dt*(1.2+(3.2+pursuitSpeed/42)*(.15+.85*z.moveAmt));
++      const liveTarget=nearestPartyTarget(z),touchDist=Math.hypot(liveTarget.x-z.x,liveTarget.y-z.y);
++      if(touchDist<z.r+liveTarget.r+2&&z.hitCd<=0&&(liveTarget.invuln||0)<=0&&!liveTarget.downed&&!liveTarget.eliminated){
++        if(z.kind==='parasite'){liveTarget.parasiteTimer=Math.max(liveTarget.parasiteTimer||0,2.5);z.dead=true;z.noRewardDeath=true;continue}
++        let mult=special.touchMult||1;if(z.kind==='stalker'&&(z.revealTimer||0)<=0)mult*=1.35;if(z.kind==='harvester'&&z.secondaryCd<=0){liveTarget.grabTimer=1.2;z.grabTargetId=partyId(liveTarget);z.secondaryCd=5;damagePartyMember(liveTarget,18);mult=0}
++        z.hitCd=.7;z.attackAnim=.23;if((z.voiceCd||0)<=0&&Math.random()<.72){sfxZombieEvent(z,'attack');z.voiceCd=.9+Math.random()*1.2}if(mult>0)damagePartyMember(liveTarget,z.damage*mult);
+       }
+     }
+ 
+@@ -2121,26 +2232,17 @@
+         if(z.dead) continue;
+         const dx=b.x-z.x,dy=b.y-z.y;
+         if(dx*dx+dy*dy<(b.r+z.r)*(b.r+z.r)){
+-          z.hp-=b.damage;sfxHit();
++          z.hp-=bulletDamageToZombie(z,b);sfxHit();
+           if(z.hp>0&&(z.voiceCd||0)<=0&&Math.random()<.20){sfxZombieEvent(z,'hurt');z.voiceCd=.7+Math.random()*.9}
+           z.hitFlash=.09;
+           state.hitMarker=.09;
+           {const bl=Math.hypot(b.vx,b.vy)||1;bloodBurst(b.x,b.y,z.kind==='brute'?6:4,85,b.vx/bl,b.vy/bl);}
+-          if(z.hp<=0){
+-            z.dead=true;sfxKill(z);
+-            bloodBurst(z.x,z.y,z.boss?24:(z.kind==='brute'?14:9),z.boss?190:125);
+-            addBloodDecals(z);
+-            state.screenShake=Math.max(state.screenShake,z.boss?1.5:(z.kind==='brute'?.75:.35));
+-            state.kills++;
+-            rewardZombieKill(z);
+-            spawnZombieDrops(z);
+-            if(state.perks.vampire && Math.random()<.10) player.hp=Math.min(player.maxHp,player.hp+5);
+-          }
++          if(z.hp<=0)resolveZombieZeroHp(z);
+           if(b.pierce>0){b.pierce--} else {b.life=0;break}
+         }
+       }
+     }
+-    state.zombies=state.zombies.filter(z=>!z.dead);
++    for(const z of state.zombies)if(!z.dead&&z.hp<=0)resolveZombieZeroHp(z);state.zombies=state.zombies.filter(z=>!z.dead);
+ 
+     if(state.spawned>=state.spawnTarget && state.zombies.length===0){
+       setTimeout(()=>{ if(!state.inShop && state.running) waveClear(); },350);
+@@ -2382,13 +2484,11 @@
+   }
+ 
+   function drawZombie(z){
++    ctx.save();if(z.kind==='stalker'&&(z.revealTimer||0)<=0)ctx.globalAlpha=.30;
+     const t=z.animT||0;
+     const move=Math.max(0,Math.min(1,z.moveAmt==null?1:z.moveAmt));
+-    const runner=z.kind==='runner';
+-    const brute=z.kind==='brute';
