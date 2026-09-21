@@ -1,0 +1,65 @@
+--- a/index.html
++++ b/index.html
+@@ -8,7 +8,7 @@
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="theme-color" content="#050709" />
+ <meta name="description" content="Undead Afterdark V28.4 - tougher scaling bosses plus Level 49 endless survival mode." />
+-<title>Undead Afterdark V28.5 iOS Button Fix</title>
++<title>Undead Afterdark V28.6 Co-op Layer Fix</title>
+ <style>
+   :root{
+     --bg:#0a0d10;
+@@ -318,7 +318,7 @@
+   .coopInputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+   .coopInput{width:100%;box-sizing:border-box;background:#0d1316;border:1px solid rgba(255,255,255,.14);color:#eef4f6;border-radius:8px;padding:12px 13px;font:800 16px system-ui;letter-spacing:.08em;text-transform:uppercase;outline:none;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}
+   .coopInput:focus{border-color:#a74646;box-shadow:0 0 0 2px rgba(167,70,70,.14)}
+-  #coopLobbyOverlay{z-index:40;background:rgba(2,5,7,.89)}
++  #coopLobbyOverlay{z-index:120;background:rgba(2,5,7,.89)}
+   .coopPanel{width:min(620px,92vw);padding:24px;background:linear-gradient(180deg,#171e22,#0c1114);border:1px solid rgba(255,255,255,.13);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+   .coopTitle{font:1000 28px system-ui;letter-spacing:.05em;color:#f4f6f7}.coopTitle span{color:#bd4848}
+   .roomCode{font:1000 clamp(34px,8vw,58px) ui-monospace,monospace;letter-spacing:.16em;text-align:center;color:#f1c27a;background:#090d0f;border:1px dashed rgba(241,194,122,.35);padding:13px;border-radius:11px;margin:16px 0 10px}
+@@ -539,7 +539,7 @@
+             <button class="startBtn" id="hostCoopBtn">HOST CO-OP</button>
+             <button class="startBtn" id="joinCoopBtn">JOIN CO-OP</button>
+           </div>
+-          <div class="menuVersion">V28.5 // iOS BUTTON FIX + ENDLESS 49</div>
++          <div class="menuVersion">V28.6 // CO-OP LOBBY FIX + ENDLESS 49</div>
+         </div>
+         <div class="smallText" id="saveInfo">V28.4: wave survival now has stronger HP scaling and double-health bosses. Level 49 Endless starts with $10,000, never pauses for wave clears, and grows harder by kills.</div>
+       </div>
+@@ -714,8 +714,20 @@
+     if(ui.coopHud)ui.coopHud.style.display=net.mode==='single'?'none':'block';if(ui.netBadge){ui.netBadge.style.display=net.mode==='single'?'none':'block';ui.netBadge.textContent=net.mode==='host'?`HOST • ${net.roomCode}`:`CO-OP • ${net.roomCode}`}
+   }
+   function lobbyMessage(msg){if(ui.coopStatus)ui.coopStatus.textContent=msg}
+-  function showLobby(code,host){ui.roomCodeDisplay.textContent=code||'------';ui.coopLobbyOverlay.style.display='flex';ui.coopStartBtn.style.display=host?'block':'none';updateSquadUI()}
+-  function closeLobby(){ui.coopLobbyOverlay.style.display='none'}
++  function showLobby(code,host){
++    const start=document.getElementById('startOverlay');
++    if(start){start.style.visibility='hidden';start.style.pointerEvents='none';start.setAttribute('aria-hidden','true')}
++    ui.roomCodeDisplay.textContent=code||'------';
++    ui.coopLobbyOverlay.style.zIndex='120';
++    ui.coopLobbyOverlay.style.display='flex';
++    ui.coopStartBtn.style.display=host?'block':'none';
++    updateSquadUI();
++  }
++  function closeLobby(){
++    ui.coopLobbyOverlay.style.display='none';
++    const start=document.getElementById('startOverlay');
++    if(start){start.style.visibility='';start.style.pointerEvents='';start.removeAttribute('aria-hidden')}
++  }
+   function destroyNetwork(){
+     try{for(const c of net.conns.values())c.close()}catch(e){}try{net.hostConn&&net.hostConn.close()}catch(e){}try{net.peer&&net.peer.destroy()}catch(e){}
+     Object.assign(net,{mode:'single',peer:null,hostConn:null,conns:new Map(),remotePlayers:new Map(),renderPlayers:[],localId:'local',roomCode:'',slot:0,connected:false,starting:false});
+@@ -746,11 +758,7 @@
+     destroyNetwork();net.name=pendingName;showLobby('------',true);lobbyMessage('LOADING MULTIPLAYER…');
+     ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}hostCoopReady()});
+   }
+-  function joinCoopReady(){
+-    const pendingName=sanitizeName(document.getElementById('coopName').value);
+-    destroyNetwork();net.name=pendingName;showLobby(String(document.getElementById('coopCode').value||'').toUpperCase().slice(0,6),false);lobbyMessage('LOADING MULTIPLAYER…');
+-    ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}joinCoopReady()});
+-  }
++  function joinCoopReady(){joinCoop()}
+   function hostCoopReady(){
+     destroyNetwork();net.mode='host';net.name=sanitizeName(document.getElementById('coopName').value);net.roomCode=makeRoomCode();net.localId='host';player.name=net.name;player.color=COOP_COLORS[0];showLobby(net.roomCode,true);lobbyMessage('CREATING ROOM…');
+     net.peer=createPeer(peerIdFor(net.roomCode),()=>{net.connected=true;lobbyMessage('ROOM OPEN • SHARE THE CODE');updateSquadUI()});if(!net.peer)return;
