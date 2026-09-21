@@ -35,7 +35,8 @@ jobs:
           d0a28862f6d1ef0a559817b610b68f01fd7ef7594ed093d0d9de2ab64ed77467  tools/v301_release/c04.txt
           ae32fb93ec1818fd3e2c6232a07a3c2a10713fab98e4b1e801383d3bc76db768  tools/v301_release/c05.txt
           0541663363075efc8bae07f83a1635cb275c4905cf9def9235b637536e1e5044  tools/v301_release/c06.txt
-          bf5e1ef94e125339c47c64cc592f1ab0902957dffb3de2f05d81526c45b87c82  tools/v301_release/c07.txt
+          adf3c0ae7c7f78a0f1912c37f5b17f7f0c7f66138e00d11297eb719aab04be33  tools/v301_release/c07a.txt
+          528cf63e0b1d2921e591b12dc15e893846fe793386e70cb106fa4f5ca1463d7e  tools/v301_release/c07b.txt
           97bcd90002881cf0dee1dbd1adc1f08ac7ca71937df58562d9fb498f0b75ea87  tools/v301_release/c08.txt
           7c923257efd80beda70b6dcdd4eeea0b33d7fca1f001ba12d39929c528664442  tools/v301_release/c09.txt
           8ea40e48e94584c36b3c2563e35e60a43b08d3027bb9d24aaf6b1822ed2a477c  tools/v301_release/c10.txt
@@ -45,7 +46,22 @@ jobs:
           SHAS
           sha256sum -c /tmp/chunk-sha.txt
 
-          cat tools/v301_release/c{00..13}.txt \
+          cat \
+            tools/v301_release/c00.txt \
+            tools/v301_release/c01.txt \
+            tools/v301_release/c02.txt \
+            tools/v301_release/c03.txt \
+            tools/v301_release/c04.txt \
+            tools/v301_release/c05.txt \
+            tools/v301_release/c06.txt \
+            tools/v301_release/c07a.txt \
+            tools/v301_release/c07b.txt \
+            tools/v301_release/c08.txt \
+            tools/v301_release/c09.txt \
+            tools/v301_release/c10.txt \
+            tools/v301_release/c11.txt \
+            tools/v301_release/c12.txt \
+            tools/v301_release/c13.txt \
             | tr -d '[:space:]' \
             | base64 --decode > site/game.gz
 
