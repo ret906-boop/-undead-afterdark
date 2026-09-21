@@ -1,0 +1,137 @@
+veFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+       buildStock:{wood:0,metal:0,steel:0,turret:0,...(sd.buildStock||{})},placing:null,placementRotation:0,
+       upgrades:{damage:0,fireRate:0,reload:0,mag:0,move:0,dash:0,...(sd.upgrades||{})},
+       perks:{pierce:false,vampire:false,runner:false,adrenaline:false,quick:false,heavy:false,doubleTap:false,...(sd.perks||{})},
+@@ -1521,7 +1555,7 @@
+     if(sd.inShop){
+       state.inShop=true;state.paused=true;state.waveFinished=true;
+       ui.shopSub.textContent=`Wave ${state.wave} cleared. Saved run restored.`;
+-      ui.bossBanner.style.display=isBossWave(state.wave+1)?'block':'none';
++      ui.bossBanner.style.display=isBossWave(state.wave+1)?'block':'none';if(isBossWave(state.wave+1))ui.bossBanner.textContent=`⚠ ${bossNameForWave(state.wave+1)} NEXT WAVE — gear up.`;
+       renderShop();
+       document.getElementById('shopOverlay').style.display='flex';
+       syncUI();
+@@ -1535,7 +1569,7 @@
+     clearSave();
+     Object.assign(state,{
+       running:true,paused:false,inShop:false,wave:1,kills:0,cash:0,
+-      zombies:[],bullets:[],drops:[],particles:[],decals:[],defenses:[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
++      zombies:[],bullets:[],enemyProjectiles:[],hazards:[],drops:[],particles:[],decals:[],defenses:[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
+       buildStock:{wood:0,metal:0,steel:0,turret:0},placing:null,placementRotation:0,
+       upgrades:{damage:0, fireRate:0, reload:0, mag:0, move:0, dash:0},
+       perks:{pierce:false, vampire:false, runner:false, adrenaline:false, quick:false, heavy:false, doubleTap:false},
+@@ -1559,15 +1593,17 @@
+     state.waveFinished=false;
+     state.zombies=[];
+     state.bullets=[];
++    state.enemyProjectiles=[];
++    state.hazards=[];
+     state.spawned=0;
+     const boss = isBossWave(state.wave);
+-    // Boss waves trade some body count for the Warden itself, while normal waves keep the growing horde pressure.
++    // Boss waves trade some body count for the rotating V28 boss roster while normal waves keep growing horde pressure.
+     const baseTarget = boss ? Math.max(30,Math.floor(14+state.wave*3.2)) : 2*Math.floor(6+state.wave*2.5);
+     const squadScale=[1,1,1.50,1.90,2.25][Math.min(4,coopCount())]||1;
+     state.spawnTarget = Math.max(1,Math.round(baseTarget*squadScale));
+     state.spawnTimer = .3;
+     state.waveBanner=2.2;
+-    ui.bossWarn.style.display = boss ? 'block':'none';
++    ui.bossWarn.style.display=boss?'block':'none';if(boss)ui.bossWarn.textContent=`⚠ ${bossNameForWave(state.wave)} INCOMING`;
+     setTimeout(()=>{ if(state.running && !state.inShop) ui.bossWarn.style.display='none'; }, 2200);
+     document.getElementById('shopOverlay').style.display='none';
+     if(ui.placementHUD)ui.placementHUD.style.display='none';state.placing=null;
+@@ -1581,7 +1617,7 @@
+     state.inShop=true;
+     state.paused=true;
+     ui.shopSub.textContent = `Wave ${state.wave} cleared. Spend cash before continuing.`;
+-    ui.bossBanner.style.display = isBossWave(state.wave+1) ? 'block':'none';
++    ui.bossBanner.style.display=isBossWave(state.wave+1)?'block':'none';if(isBossWave(state.wave+1))ui.bossBanner.textContent=`⚠ ${bossNameForWave(state.wave+1)} NEXT WAVE — gear up.`;
+     renderShop();
+     document.getElementById('shopOverlay').style.display='flex';
+     sfxWaveClear();
+@@ -1792,53 +1828,84 @@
+     return wave>=5 && wave%5===0;
+   }
+ 
++  const ENEMY_SPECS={
++    walker:{r:[22,27],hp:1,speed:1,damage:1,rewardBase:8,rewardWave:1},
++    runner:{r:[17,20],hp:.68,speed:1.48,damage:.78,rewardBase:12,rewardWave:1},
++    brute:{r:[31,36],hp:2.35,speed:.72,damage:1.65,rewardBase:25,rewardWave:2},
++    crawler:{r:[14,17],hp:.58,speed:1.28,damage:.72,rewardBase:10,rewardWave:1},
++    screamer:{r:[20,24],hp:.85,speed:.88,damage:.65,rewardBase:20,rewardWave:1.5,unlock:7,weight:.72,cap:1},
++    spitter:{r:[20,24],hp:.82,speed:.78,damage:.55,rewardBase:18,rewardWave:1.5,unlock:8,weight:1,cap:2},
++    bloater:{r:[32,37],hp:1.55,speed:.60,damage:.90,rewardBase:24,rewardWave:1.8,unlock:9,weight:.85,cap:2},
++    hunter:{r:[18,22],hp:.90,speed:1.62,damage:1.05,rewardBase:22,rewardWave:1.7,unlock:10,weight:1,cap:2},
++    riot:{r:[27,31],hp:1.85,speed:.78,damage:1.15,rewardBase:28,rewardWave:2,unlock:11,weight:.82,cap:2},
++    leaper:{r:[18,21],hp:.78,speed:1.36,damage:.90,rewardBase:20,rewardWave:1.6,unlock:12,weight:1,cap:2},
++    parasite:{r:[12,15],hp:.38,speed:1.72,damage:.30,rewardBase:16,rewardWave:1.3,unlock:13,weight:.60,cap:2},
++    breaker:{r:[34,39],hp:2.45,speed:.70,damage:1.35,rewardBase:32,rewardWave:2.2,unlock:14,weight:.62,cap:1},
++    stalker:{r:[18,22],hp:.72,speed:1.50,damage:1.15,rewardBase:24,rewardWave:1.8,unlock:15,weight:.82,cap:2},
++    revenant:{r:[22,26],hp:1.30,speed:.96,damage:1.05,rewardBase:30,rewardWave:2,unlock:18,weight:.58,cap:2}
++  };
++  const BOSS_SPECS={
++    warden:{name:'WARDEN',r:46,hp:12,speed:.74,damage:2.8},
++    butcher:{name:'THE BUTCHER',r:50,hp:14,speed:.80,damage:3.1},
++    mother:{name:'THE MOTHER',r:58,hp:15.5,speed:.52,damage:2.45},
++    juggernaut:{name:'THE JUGGERNAUT',r:55,hp:18,speed:.60,damage:3.7},
++    harvester:{name:'THE HARVESTER',r:43,hp:13.5,speed:1.05,damage:3.45},
++    patientzero:{name:'PATIENT ZERO',r:55,hp:18,speed:.90,damage:3.9}
++  };
++  const BOSS_ORDER=['warden','butcher','mother','juggernaut','harvester','patientzero'];
++  function bossKindForWave(wave){if(!isBossWave(wave))return null;return BOSS_ORDER[(Math.floor(wave/5)-1)%BOSS_ORDER.length]}
++  function bossNameForWave(wave){const k=bossKindForWave(wave);return k?(BOSS_SPECS[k]?.name||'BOSS'):'BOSS'}
++  function aliveKindCount(kind){let n=0;for(const z of state.zombies)if(!z.dead&&z.kind===kind)n++;return n}
++  function specialShareForWave(w){if(w<7)return 0;if(w<=9)return .10+(w-7)*.03;if(w<=14)return .20;if(w<=19)return .26;if(w<=29)return .32;return .36}
++  function chooseSpecialKind(wave){
++    const choices=[];let total=0;
++    for(const [kind,spec] of Object.entries(ENEMY_SPECS)){
++      if(!spec.unlock||wave<spec.unlock)continue;
++      const cap=(spec.cap||2)+(coopCount()>1?1:0);
++      if(aliveKindCount(kind)>=cap)continue;
++      total+=spec.weight||1;choices.push([kind,total]);
++    }
++    if(!choices.length)return null;const r=Math.random()*total;for(const [k,c] of choices)if(r<=c)return k;return choices.at(-1)[0];
++  }
+   function chooseZombieKind(wave){
++    let specialChance=specialShareForWave(wave)*(isBossWave(wave)?.75:1);
++    if(Math.random()<specialChance){const k=chooseSpecialKind(wave);if(k)return k}
+     const roll=Math.random();
+-    // Early waves teach the basics before special infected enter the horde.
+-    if(wave<=2) return 'walker';
+-    if(wave===3) return roll<.10?'runner':'walker';
+-    if(wave===4) return roll<.13?'runner':(roll<.20?'crawler':'walker');
+-    if(wave===5) return roll<.12?'runner':(roll<.18?'crawler':'walker');
+-    if(wave===6) return roll<.15?'runner':(roll<.24?'crawler':(roll<.28?'brute':'walker'));
+-    if(wave===7) return roll<.16?'runner':(roll<.26?'crawler':(roll<.32?'brute':'walker'));
+-    if(wave===8) return roll<.17?'runner':(roll<.28?'crawler':(roll<.36?'brute':'walker'));
+-    if(wave===9) return roll<.18?'runner':(roll<.29?'crawler':(roll<.39?'brute':'walker'));
++    if(wave<=2)return 'walker';
++    if(wave===3)return roll<.10?'runner':'walker';
++    if(wave===4)return roll<.13?'runner':(roll<.20?'crawler':'walker');
++    if(wave<=5)return roll<.12?'runner':(roll<.18?'crawler':'walker');
++    if(wave<=7)return roll<.16?'runner':(roll<.26?'crawler':(roll<.32?'brute':'walker'));
++    if(wave<=9)return roll<.18?'runner':(roll<.29?'crawler':(roll<.39?'brute':'walker'));
+     return roll<.18?'runner':(roll<.31?'brute':(roll<.41?'crawler':'walker'));
+   }
+-
+-  function spawnZombie(){
+-    const anchor=partySpawnAnchor();
+-    const ang=Math.random()*Math.PI*2;
+-    const dist=Math.max(W,H)*0.60 + 170 + Math.random()*220;
+-    let x=anchor.x+Math.cos(ang)*dist, y=anchor.y+Math.sin(ang)*dist;
+-    for(let tries=0;tries<12 && collidesMap(x,y,30);tries++){
+-      const a=Math.random()*Math.PI*2;
+-      x=anchor.x+Math.cos(a)*dist; y=anchor.y+Math.sin(a)*dist;
+-    }
+-    const boss=isBossWave(state.wave) && state.spawned===state.spawnTarget-1;
++  function createZombie(kind,x,y,opts={}){
++    const boss=!!opts.boss,spec=boss?BOSS_SPECS[kind]:ENEMY_SPECS[kind];if(!spec)return null;
+     const baseHp=42+state.wave*8;
+-    const kind=boss?'warden':chooseZombieKind(state.wave);
+-    const stats={
+-      walker:{r:22+Math.random()*5,hp:1,speed:1,damage:1},
+-      runner:{r:17+Math.random()*3,hp:.68,speed:1.48,damage:.78},
+-      brute:{r:31+Math.random()*5,hp:2.35,speed:.72,damage:1.65},
+-      crawler:{r:14+Math.random()*3,hp:.58,speed:1.28,damage:.72},
+-      warden:{r:46,hp:12,speed:.74,damage:2.8}
+-    }[kin
