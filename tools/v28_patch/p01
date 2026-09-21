@@ -70,4 +70,4 @@
      Object.assign(state,{
        running:true,paused:false,inShop:false,wave:Math.max(1,sd.wave||1),kills:sd.kills||0,cash:sd.cash||0,
 -      zombies:[],bullets:[],drops:[],particles:[],decals:[],defenses:Array.isArray(sd.defenses)?sd.defenses.map(d=>({...d})):[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,
-+      zombies:[],bullets:[],enemyProjectiles:[],hazards:[],drops:[],particles:[],decals:[],defenses:Array.isArray(sd.defenses)?sd.defenses.map(d=>({...d})):[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,waveFinished:false,screenShake:0,hitMarker:0,waveBanner:0,wa
++      zombies:[],bullets:[],enemyProjectiles:[],hazards:[],drops:[],particles:[],decals:[],defenses:Array.isArray(sd.defenses)?sd.defenses.map(d=>({...d})):[],turretShots:[],spawned:0,spawnTarget:0,spawnTimer:0,wa

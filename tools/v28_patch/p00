@@ -133,4 +133,5 @@
 +    const pendingName=sanitizeName(document.getElementById('coopName').value);
 +    destroyNetwork();net.name=pendingName;showLobby('------',true);lobbyMessage('LOADING MULTIPLAYER…');
 +    ensurePeerLibrary(ok=>{if(!ok){lobbyMessage('MULTIPLAYER COULD NOT LOAD. SOLO MODE STILL WORKS.');return}hostCoopReady()});
++  }
 +
