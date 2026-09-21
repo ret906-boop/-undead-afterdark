@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V28.6 Final
+name: Deploy Undead Afterdark V29
 
 on:
   push:
@@ -11,127 +11,47 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v286-final
+  group: pages-v29
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel stale Pages deployment
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          code=$(curl -sS -o /tmp/pages-cancel.out -w "%{http_code}" \
-            -X POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${{ github.repository }}/pages/deployments/e0f768d8fc1b6626958c622053893a45142fc69a/cancel")
-          echo "Stale Pages cancel response: $code"
-          cat /tmp/pages-cancel.out || true
-
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild V27 base
+      - name: Build verified V29 site
         shell: bash
         run: |
+          set -euo pipefail
           mkdir -p site
-          cat \
-            tools/v27_mobile/c00.txt \
-            tools/v27_mobile/c01.txt \
-            tools/v27_mobile/c02.txt \
-            tools/v27_mobile/c03.txt \
-            tools/v27_mobile/c04.txt \
-            tools/v27_mobile/c05.txt \
-            tools/v27_mobile/c06.txt \
-            tools/v27_mobile/c07a.txt \
-            tools/v27_mobile/c07b.txt \
-            tools/v27_mobile/c08.txt \
-            tools/v27_mobile/c09.txt \
-            | tr -d '[:space:]' | base64 --decode > site/game.gz
-          echo '524fa105537710706a7d8f888f83e8ec35d875cbe3492ca746bd5afffadf3fc0  site/game.gz' | sha256sum -c -
-          gzip -dc site/game.gz > site/index.html
-          rm site/game.gz
-          echo '8b848f7c81139a029e574414c054f38598507918bc5af5ac32b2c0ff8d8c8806  site/index.html' | sha256sum -c -
+          curl --fail --location --retry 5 \
+            "https://ret906-boop.github.io/-undead-afterdark/?v29base=${GITHUB_SHA}" \
+            -o /tmp/base.html
 
-      - name: Apply V27.1 mobile input base
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('site/index.html')
-          s=p.read_text(encoding='utf-8')
-          s=s.replace("    overflow:hidden;\n    touch-action:none;\n  }\n  #wrap{position:relative;width:100vw;height:100vh;background:#080a0c;}\n  canvas{display:block;width:100%;height:100%;background:#12161a;}","    overflow:hidden;\n    touch-action:manipulation;\n  }\n  #wrap{position:relative;width:100vw;height:100vh;background:#080a0c;}\n  canvas{display:block;width:100%;height:100%;background:#12161a;touch-action:none;}",1)
-          s=s.replace('#startOverlay{\n  overflow:hidden;','#startOverlay{\n  z-index:50;\n  overflow:hidden;',1)
-          s=s.replace(".coopInput{width:100%;box-sizing:border-box;background:#0d1316;border:1px solid rgba(255,255,255,.14);color:#eef4f6;border-radius:8px;padding:12px 13px;font:800 13px system-ui;letter-spacing:.08em;text-transform:uppercase;outline:none}",".coopInput{width:100%;box-sizing:border-box;background:#0d1316;border:1px solid rgba(255,255,255,.14);color:#eef4f6;border-radius:8px;padding:12px 13px;font:800 16px system-ui;letter-spacing:.08em;text-transform:uppercase;outline:none;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default}",1)
-          s=s.replace('            <input id="coopName" class="coopInput" maxlength="14" value="SURVIVOR" aria-label="Player name">\n            <input id="coopCode" class="coopInput" maxlength="6" placeholder="ROOM CODE" aria-label="Room code">','            <input id="coopName" class="coopInput" type="text" inputmode="text" maxlength="14" value="SURVIVOR" aria-label="Player name" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">\n            <input id="coopCode" class="coopInput" type="text" inputmode="text" maxlength="6" placeholder="TAP TO TYPE CODE" aria-label="Room code" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go">',1)
-          s=s.replace("  addEventListener('keydown',e=>{\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;","  addEventListener('keydown',e=>{\n    const tag=(e.target&&e.target.tagName||'').toLowerCase();\n    if(tag==='input'||tag==='textarea'||tag==='select'||(e.target&&e.target.isContentEditable))return;\n    if(e.key.toLowerCase()==='m'){e.preventDefault();toggleWorldMap();return}\n    state.keys[e.key.toLowerCase()]=true;",1)
-          anchor="  document.getElementById('continueBtn').onclick=()=>{destroyNetwork();ensureAudio();loadSavedRun()};"
-          block=(
-            "  // Mobile-safe co-op text entry. Gameplay owns touch gestures only on the canvas; menu inputs remain native controls.\n"
-            "  const coopNameInput=document.getElementById('coopName');\n"
-            "  const coopCodeInput=document.getElementById('coopCode');\n"
-            "  for(const el of [coopNameInput,coopCodeInput]){\n"
-            "    if(!el)continue;\n"
-            "    for(const ev of ['touchstart','touchend','pointerdown','pointerup','click'])el.addEventListener(ev,e=>e.stopPropagation(),{passive:true});\n"
-            "  }\n"
-            "  if(coopCodeInput){\n"
-            "    coopCodeInput.addEventListener('input',()=>{\n"
-            "      const clean=coopCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);\n"
-            "      if(coopCodeInput.value!==clean)coopCodeInput.value=clean;\n"
-            "    });\n"
-            "    coopCodeInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});\n"
-            "    coopCodeInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();coopCodeInput.blur();joinCoop()}});\n"
-            "  }\n"
-            "  if(coopNameInput)coopNameInput.addEventListener('focus',()=>{state.mouse.down=false;state.fireHeld=false;state.manualAimHold=false});\n\n"
-            + anchor
-          )
-          s=s.replace(anchor,block,1)
-          s=s.replace('V27 // MOBILE + 1–4 PLAYER CO-OP // PUBLIC ALPHA','V27.1 // MOBILE INPUT FIX + 1–4 PLAYER CO-OP',1)
-          p.write_text(s,encoding='utf-8')
-          PY
-          echo 'c80c848e3a0c8ea9d17902c07744b3332c366a44e2df77a25ee7c542bffbc83c  site/index.html' | sha256sum -c -
+          base_hash=$(sha256sum /tmp/base.html | awk '{print $1}')
+          v286='322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859'
+          v29='ecdabdc562b8701172880ab44dea080e9ae3cf8e03ba185af2421cbb94589756'
 
-      - name: Apply V28.3 infected boss and touch update
-        shell: bash
-        run: |
-          cat tools/v28_patch/p00 tools/v28_patch/p01 tools/v28_patch/p02 tools/v28_patch/p03 tools/v28_patch/p04 tools/v28_patch/p05 > /tmp/v283.patch
-          cd site
-          patch -p1 < /tmp/v283.patch
-          echo 'a9733562f13cb2675b29a082a1e52314cfd9469c542c7796df53a12b3b433e74  index.html' | sha256sum -c -
-          touch .nojekyll
+          if [ "$base_hash" = "$v29" ]; then
+            cp /tmp/base.html site/index.html
+          elif [ "$base_hash" = "$v286" ]; then
+            tr -d '[:space:]' < tools/v29_patch/v29.patch.gz.b64 | base64 --decode | gzip -dc > /tmp/v29.patch
+            echo '0a0a479668929b53e8b578b3e9d457611cdc8857a753103d04704df45de091b2  /tmp/v29.patch' | sha256sum -c -
+            cp /tmp/base.html site/index.html
+            cd site
+            patch -p1 < /tmp/v29.patch
+            cd ..
+          else
+            echo "Unexpected live base hash: $base_hash"
+            exit 1
+          fi
 
-      - name: Apply V28.4 boss scaling and Endless 49
-        shell: bash
-        run: |
-          cat tools/v284_patch/p00 tools/v284_patch/p01 tools/v284_patch/p02 > /tmp/v284.patch
-          echo '3c4b034581433cf1c271d91b56f616a1c1413f7b71ea58059a9d417dc1857af0  /tmp/v284.patch' | sha256sum -c -
-          cd site
-          patch -p1 < /tmp/v284.patch
-          echo '3819247c9ef5525bfe6e7e5f91b2c20effe0d9c6d992e452dc1f5c112d20f5d2  index.html' | sha256sum -c -
-          touch .nojekyll
-
-      - name: Apply V28.5 iOS button fix
-        shell: bash
-        run: |
-          echo '27fff6184a4820acd0cdd34c4f66b44184ccf973d00d92435612aec2864d09bc  tools/v285_patch/v285.patch' | sha256sum -c -
-          cd site
-          patch -p1 < ../tools/v285_patch/v285.patch
-          echo '52cc04185fb98b2d0d51e847cff0defdb5c5ce7322864c58b65392001274a0c2  index.html' | sha256sum -c -
-          touch .nojekyll
-
-      - name: Apply V28.6 co-op lobby layer fix
-        shell: bash
-        run: |
-          echo '48230cf4ee59c624c5fdaa84405d4102125adce97bb7c531eb6a7ec5e02cce51  tools/v286_patch/v286.patch' | sha256sum -c -
-          cd site
-          patch -p1 < ../tools/v286_patch/v286.patch
-          echo '322635ff84ce001ed9c3d3f5dfe02222f8e89b3ac9613e3b2d81753821151859  index.html' | sha256sum -c -
-          touch .nojekyll
+          echo "$v29  site/index.html" | sha256sum -c -
+          grep -q 'V29 // SURVIVOR PROGRESSION + BOSS PHASES' site/index.html
+          grep -q "undead_afterdark_profile_v1" site/index.html
+          touch site/.nojekyll
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
