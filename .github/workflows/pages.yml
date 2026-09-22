@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V30.1
+name: Deploy Undead Afterdark V30.2
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v301
+  group: pages-v302
   cancel-in-progress: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild verified V30.1
+      - name: Rebuild verified V30.1 base
         shell: bash
         run: |
           set -euo pipefail
@@ -66,13 +66,28 @@ jobs:
             | base64 --decode > site/game.gz
 
           echo '8e575da8bcd7bf1049caee9cf5676b3f3aee6ca9cf989e4ed0a4bb91f446ed6e  site/game.gz' | sha256sum -c -
-
           gzip -dc site/game.gz > site/index.html
           rm site/game.gz
-
           echo '55d7f13b71816e4eac142db0e06d000c84a63bdac5bd4537b55f6a83b3fb043a  site/index.html' | sha256sum -c -
-          grep -q 'V30.1 // CO-OP SHOP + AUTO-FIRE + SOUND + SAVE' site/index.html
-          grep -q 'undead_afterdark_coop_v301_save' site/index.html
+
+      - name: Apply verified V30.2 mobile co-op fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'c03406ef5564609a26b84c5b44eb97a2d1d30e89265da21c888d723df6bf9b4e  tools/v302_patch/c00.txt' | sha256sum -c -
+          echo 'db3c130728e55cab94dc1bd454f44b3e9d31a2e2dfe701cc9b3209131a94ce85  tools/v302_patch/c01.txt' | sha256sum -c -
+          cat tools/v302_patch/c00.txt tools/v302_patch/c01.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode \
+            | gzip -dc > /tmp/v302.patch
+          echo '22f48079282988f11b30842bfbde5edfe195a9f08e437f3c54822f80edb3d423  /tmp/v302.patch' | sha256sum -c -
+          cd site
+          patch -p1 < /tmp/v302.patch
+          cd ..
+          echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/index.html' | sha256sum -c -
+          grep -q 'V30.2 // MOBILE CO-OP SYNC + JOIN CODE FIX' site/index.html
+          grep -q 'SYNCING WORLD' site/index.html
+          grep -q '5-CHAR ROOM CODE' site/index.html
           touch site/.nojekyll
 
       - name: Configure Pages
