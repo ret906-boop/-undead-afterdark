@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V35
+name: Deploy Undead Afterdark V36
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v35
+  group: pages-v36
   cancel-in-progress: true
 
 jobs:
@@ -25,53 +25,82 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34
+          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34 site/versions/v35
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v32/?release=${GITHUB_SHA}" -o site/versions/v32/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v33/?release=${GITHUB_SHA}" -o site/versions/v33/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v34/?release=${GITHUB_SHA}" -o site/versions/v34/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v35/?release=${GITHUB_SHA}" -o site/versions/v35/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
           echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
           echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/versions/v32/index.html' | sha256sum -c -
           echo 'd0f07c455a21b27dc74a232a783eca5703f56d9f8becc321a342f61f5fdc7063  site/versions/v33/index.html' | sha256sum -c -
           echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/versions/v34/index.html' | sha256sum -c -
-          cp site/versions/v34/index.html site/index.html
-
-      - name: Apply verified V35 safehouse and base building overhaul
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '027301d7988e312d9e9c331b65356b3ee8de71a96871dc97f3fb272874c7a155  tools/v35_patch/c00.txt' | sha256sum -c -
-          echo 'adc29d4cfaade331b237332089f159713f0c49fcc6a79234765d9ae7be0bcf7b  tools/v35_patch/c01.txt' | sha256sum -c -
-          echo '81964e0b507ca6fbf20903bdfbe32cb9fa9dede12b710a88679d5017821c19d5  tools/v35_patch/c02.txt' | sha256sum -c -
-          echo 'b625a766c5a29d8d4f9305e9826e5683d72f995436ce37010140fb300308ba63  tools/v35_patch/c03.txt' | sha256sum -c -
-          echo 'daa3e15c7fc56b6d223edde90f1da5187c2fc269252a8055d2b6effa24dfedcf  tools/v35_patch/c04.txt' | sha256sum -c -
-          cat tools/v35_patch/c00.txt tools/v35_patch/c01.txt tools/v35_patch/c02.txt tools/v35_patch/c03.txt tools/v35_patch/c04.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > /tmp/v35.patch.gz
-          echo 'bbac4d71d173c9aef77c1794b47a8438d33d2bdcbe18450a47b76427db354446  /tmp/v35.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v35.patch.gz > /tmp/v35.patch
-          echo 'c8fa28a7a177bdc300d65f83095eff5d837e3f107bcf0ae90960290caddb2d62  /tmp/v35.patch' | sha256sum -c -
-          cd site
-          patch index.html < /tmp/v35.patch
-          cd ..
-          echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/index.html' | sha256sum -c -
-          grep -q 'V35 // SAFEHOUSE + BASE BUILDING' site/index.html
-          grep -q 'SAFEHOUSE + BASE' site/index.html
-          grep -q 'BASE PARTS' site/index.html
-          grep -q 'SAFEHOUSE RAID' site/index.html
-          grep -q 'PERIMETER DEFENSE' site/index.html
-
-      - name: Freeze V35 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v35
-          cp site/index.html site/versions/v35/index.html
           echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/versions/v35/index.html' | sha256sum -c -
+          cp site/versions/v35/index.html site/index.html
+
+      - name: Apply verified V36 missions and contracts overhaul
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'c115086cc9037a4943f16ce0e5787bd60d451bb3fa727a4ec512456a6925ceb5  tools/v36_patch/p00.txt' | sha256sum -c -
+          echo 'd90ebb91630aefcbf5b9d97ebb6fb60b5ddb516c0086607f7edd04949fbfb054  tools/v36_patch/p01.txt' | sha256sum -c -
+          echo 'a60549d8fb8422f2d33f9c9a111ea06085c5f45cbc15133b5dc7808d445aed02  tools/v36_patch/p02.txt' | sha256sum -c -
+          echo '890565e05bb28a355ece62376b2b7967f1ba1a26bd9188f98e27fe349a84bbe6  tools/v36_patch/p03.txt' | sha256sum -c -
+          echo '58b7c173da44c1e8fa8a6c4faf9a24e409ebd82bc8b6f2ecb542252097fbf424  tools/v36_patch/p04a.txt' | sha256sum -c -
+          echo '67a3e85817d2a5ce761cbbaa0eaf8a6a560d63a98247bf702cc70d4a18981c08  tools/v36_patch/p04b_pre.txt' | sha256sum -c -
+          echo 'd334874329260f747e669c5e006dc8733039ebf715e60fec8dc438d79ba16626  tools/v36_patch/p04b_tail.hex' | sha256sum -c -
+          echo '3d0d524696dcb120cc310a5a822760b24a27fe2a3ded3bd4788ce4624396a56f  tools/v36_patch/p05.txt' | sha256sum -c -
+          echo '99e79491515c1b857e1943c947e8349707a8d7da87113b95d748089009a797be  tools/v36_patch/p06.txt' | sha256sum -c -
+          echo 'a37bd3d7ec6b74902098952320d4462b4b32c8ea22d0179c5caedf4ed2bed0bb  tools/v36_patch/p07.txt' | sha256sum -c -
+          echo '9fe058046fbd7575da52bc01379843e453f9facee579c678db32a852b11d312c  tools/v36_patch/p08.txt' | sha256sum -c -
+          echo 'a7b05c3b54479fe0627668e5edfd35263852c3ed71d1ae0f9ee2187c6b99aa12  tools/v36_patch/p09.txt' | sha256sum -c -
+          echo '86c0c72a22cad988acf332d90f1532ac47aa45d6b83fc4b8073311fe2fce6e74  tools/v36_patch/p10.txt' | sha256sum -c -
+          echo '1bcf650eed36dfcdda62394ec1c44da9937de06480f2da4473c783b53fd1f472  tools/v36_patch/p11.txt' | sha256sum -c -
+          echo '794a53395c3f65bd448a542b8ef26814474089fc168f9de76d0e5980cd727646  tools/v36_patch/p12.txt' | sha256sum -c -
+
+          {
+            cat tools/v36_patch/p00.txt
+            cat tools/v36_patch/p01.txt
+            cat tools/v36_patch/p02.txt
+            cat tools/v36_patch/p03.txt
+            cat tools/v36_patch/p04a.txt
+            cat tools/v36_patch/p04b_pre.txt
+            xxd -r -p tools/v36_patch/p04b_tail.hex
+            cat tools/v36_patch/p05.txt
+            cat tools/v36_patch/p06.txt
+            cat tools/v36_patch/p07.txt
+            cat tools/v36_patch/p08.txt
+            cat tools/v36_patch/p09.txt
+            cat tools/v36_patch/p10.txt
+            cat tools/v36_patch/p11.txt
+            cat tools/v36_patch/p12.txt
+          } | tr -d '[:space:]' | base64 --decode > /tmp/v36.patch.gz
+
+          echo '2228e589836ae23779b83a6942d0b1075c678bbdbb6d84863b0a7ec8daf7d3de  /tmp/v36.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v36.patch.gz > /tmp/v36.patch
+          echo 'd2681ff7e26bcb0365b27b90d9f633b1b4f3f7bf83aa5f2076d4ed9bcb0caea5  /tmp/v36.patch' | sha256sum -c -
+          cd site
+          patch index.html < /tmp/v36.patch
+          cd ..
+          echo '823e58ddaec95de19e59e11ff8750f515af0e2ade61cfe8a4d8f6182f1bb0acf  site/index.html' | sha256sum -c -
+          grep -q 'V36 // MISSIONS + CONTRACTS' site/index.html
+          grep -q 'MISSIONS + CONTRACTS' site/index.html
+          grep -q 'DEAD OR DEADER' site/index.html
+          grep -q 'RECOVER MILITARY SUPPLIES' site/index.html
+          grep -q 'TERMINATION CONTRACT' site/index.html
+          grep -q 'v36Active' site/index.html
+
+      - name: Freeze V36 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v36
+          cp site/index.html site/versions/v36/index.html
+          echo '823e58ddaec95de19e59e11ff8750f515af0e2ade61cfe8a4d8f6182f1bb0acf  site/versions/v36/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
