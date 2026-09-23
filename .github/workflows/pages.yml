@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V30.3
+name: Deploy Undead Afterdark V31
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v303
+  group: pages-v31
   cancel-in-progress: true
 
 jobs:
@@ -21,109 +21,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Rebuild verified V30.1 base
+      - name: Restore verified rollback builds
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site
-
-          cat > /tmp/chunk-sha.txt <<'SHAS'
-          30076be0b52008f6d118a1f73c4240bdb7a8adf94bb028b2d3d954e78399efb3  tools/v301_release/c00.txt
-          a20d50573492939b68ae5c63901e27f7bc02028ed2faa58098688ca595bb19bd  tools/v301_release/c01.txt
-          1618e8b9f4b9c146ca12ed5ca627008b5141b4834d11a8b5c387c507c0dbd581  tools/v301_release/c02.txt
-          f6db8afc01854ca527937f7703aa161347776fbe9a338e9ef85991aef88825f9  tools/v301_release/c03.txt
-          d0a28862f6d1ef0a559817b610b68f01fd7ef7594ed093d0d9de2ab64ed77467  tools/v301_release/c04.txt
-          ae32fb93ec1818fd3e2c6232a07a3c2a10713fab98e4b1e801383d3bc76db768  tools/v301_release/c05.txt
-          0541663363075efc8bae07f83a1635cb275c4905cf9def9235b637536e1e5044  tools/v301_release/c06.txt
-          adf3c0ae7c7f78a0f1912c37f5b17f7f0c7f66138e00d11297eb719aab04be33  tools/v301_release/c07a.txt
-          528cf63e0b1d2921e591b12dc15e893846fe793386e70cb106fa4f5ca1463d7e  tools/v301_release/c07b.txt
-          97bcd90002881cf0dee1dbd1adc1f08ac7ca71937df58562d9fb498f0b75ea87  tools/v301_release/c08.txt
-          7c923257efd80beda70b6dcdd4eeea0b33d7fca1f001ba12d39929c528664442  tools/v301_release/c09.txt
-          8ea40e48e94584c36b3c2563e35e60a43b08d3027bb9d24aaf6b1822ed2a477c  tools/v301_release/c10.txt
-          4838656badc87f638fa58977995f9ee6035c90aebb94a973a5011ce0c6b16b95  tools/v301_release/c11.txt
-          d08ab0c58d4856c81c36cfa24a352b0352adb64ae751f5ae4f87e7a0f124f823  tools/v301_release/c12.txt
-          c1eac9f6cd7d9d1859f16fee51b843ba73c651a05a5374cf0e062decc2e23894  tools/v301_release/c13.txt
-          SHAS
-          sha256sum -c /tmp/chunk-sha.txt
-
-          cat \
-            tools/v301_release/c00.txt \
-            tools/v301_release/c01.txt \
-            tools/v301_release/c02.txt \
-            tools/v301_release/c03.txt \
-            tools/v301_release/c04.txt \
-            tools/v301_release/c05.txt \
-            tools/v301_release/c06.txt \
-            tools/v301_release/c07a.txt \
-            tools/v301_release/c07b.txt \
-            tools/v301_release/c08.txt \
-            tools/v301_release/c09.txt \
-            tools/v301_release/c10.txt \
-            tools/v301_release/c11.txt \
-            tools/v301_release/c12.txt \
-            tools/v301_release/c13.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > site/game.gz
-
-          echo '8e575da8bcd7bf1049caee9cf5676b3f3aee6ca9cf989e4ed0a4bb91f446ed6e  site/game.gz' | sha256sum -c -
-          gzip -dc site/game.gz > site/index.html
-          rm site/game.gz
-          echo '55d7f13b71816e4eac142db0e06d000c84a63bdac5bd4537b55f6a83b3fb043a  site/index.html' | sha256sum -c -
-
-      - name: Apply verified V30.2 mobile co-op fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo 'c03406ef5564609a26b84c5b44eb97a2d1d30e89265da21c888d723df6bf9b4e  tools/v302_patch/c00.txt' | sha256sum -c -
-          echo 'db3c130728e55cab94dc1bd454f44b3e9d31a2e2dfe701cc9b3209131a94ce85  tools/v302_patch/c01.txt' | sha256sum -c -
-          cat tools/v302_patch/c00.txt tools/v302_patch/c01.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode \
-            | gzip -dc > /tmp/v302.patch
-          echo '22f48079282988f11b30842bfbde5edfe195a9f08e437f3c54822f80edb3d423  /tmp/v302.patch' | sha256sum -c -
-          cd site
-          patch -p1 < /tmp/v302.patch
-          cd ..
-          echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/index.html' | sha256sum -c -
-          grep -q 'V30.2 // MOBILE CO-OP SYNC + JOIN CODE FIX' site/index.html
-          grep -q 'SYNCING WORLD' site/index.html
-          grep -q '5-CHAR ROOM CODE' site/index.html
-
-      - name: Freeze V30.2 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v30.2
-          cp site/index.html site/versions/v30.2/index.html
+          mkdir -p site/versions/v30.2 site/versions/v30.3
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
-
-      - name: Apply verified V30.3 multiplayer stability fix
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo 'e0abebf867b00dae5e4614de1931c54ea5ca7ccae36a596d3a0c4b643f44e22d  tools/v303_patch/c00.txt' | sha256sum -c -
-          echo '074c567c1e551fc9cdcbd6e667a2f0af6d54429636f79c095b7b2ea74e70d710  tools/v303_patch/c01.txt' | sha256sum -c -
-          echo 'b88bf9620e49cfe185304f25a8a27d399b8ebfa4db55fa10427205734ed7acbe  tools/v303_patch/c02.txt' | sha256sum -c -
-          cat tools/v303_patch/c00.txt tools/v303_patch/c01.txt tools/v303_patch/c02.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode \
-            | gzip -dc > /tmp/v303.patch
-          echo '81a7ef9a9c1d7f95b63c2d180d23d0b22d3ada0d3ff262ac1156659e02be1874  /tmp/v303.patch' | sha256sum -c -
-          cd site
-          patch -p1 < /tmp/v303.patch
-          cd ..
-          echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/index.html' | sha256sum -c -
-          grep -q 'V30.3: ready checks, ping status, automatic reconnect, host handoff checkpoints, and frozen rollback releases.' site/index.html
-          grep -q 'READY UP' site/index.html
-          grep -q 'RECONNECTING' site/index.html
-
-      - name: Freeze V30.3 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v30.3
-          cp site/index.html site/versions/v30.3/index.html
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
+          cp site/versions/v30.3/index.html site/index.html
+
+      - name: Apply verified V31 loot and weapon overhaul
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'e8986daa4c7024d70d7d5889de49843f768abbace13f214a79af557b4abe8fd2  tools/v31_patch/c00.txt' | sha256sum -c -
+          echo 'f3febeb21fc745c4b1e3fa261164f16c8d5c879beafe4a70f3b59e93b4d2f286  tools/v31_patch/c01.txt' | sha256sum -c -
+          echo '1141455d37f1ce65c6c0e37d4982bb5bc711a93b82c96769947132277075cb07  tools/v31_patch/c02.txt' | sha256sum -c -
+          cat tools/v31_patch/c00.txt tools/v31_patch/c01.txt tools/v31_patch/c02.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode > /tmp/v31.patch.gz
+          echo '590ce3419fbb4fd28bf121ea4bc9c90d6eb8105fdb3f59d926de0216c0947bb1  /tmp/v31.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v31.patch.gz > /tmp/v31.patch
+          echo '8cd37ec8254cc090a1af50e8fe6f145154b02a8f3b1ec74a2e5017e531527855  /tmp/v31.patch' | sha256sum -c -
+          cd site
+          patch -p1 < /tmp/v31.patch
+          cd ..
+          echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/index.html' | sha256sum -c -
+          grep -q 'V31 // LOOT + WEAPON INVENTORY OVERHAUL' site/index.html
+          grep -q 'WEAPON INVENTORY' site/index.html
+          grep -q 'LOOT WEAPON' site/index.html
+
+      - name: Freeze V31 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v31
+          cp site/index.html site/versions/v31/index.html
+          echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
