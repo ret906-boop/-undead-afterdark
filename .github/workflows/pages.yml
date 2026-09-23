@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37
+name: Deploy Undead Afterdark V37.1
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v37
+  group: pages-v371
   cancel-in-progress: true
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34 site/versions/v35 site/versions/v36
+          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34 site/versions/v35 site/versions/v36 site/versions/v37
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
@@ -34,6 +34,7 @@ jobs:
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v34/?release=${GITHUB_SHA}" -o site/versions/v34/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v35/?release=${GITHUB_SHA}" -o site/versions/v35/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v36/?release=${GITHUB_SHA}" -o site/versions/v36/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v37/?release=${GITHUB_SHA}" -o site/versions/v37/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
           echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
@@ -42,44 +43,35 @@ jobs:
           echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/versions/v34/index.html' | sha256sum -c -
           echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/versions/v35/index.html' | sha256sum -c -
           echo '823e58ddaec95de19e59e11ff8750f515af0e2ade61cfe8a4d8f6182f1bb0acf  site/versions/v36/index.html' | sha256sum -c -
-          cp site/versions/v36/index.html site/index.html
-
-      - name: Apply verified V37 mobile command UI
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '38b84dfad48196a7568fa8966a2bb0f0537a9aa6b1ac49bc423001e89b3aea7a  tools/v37_patch/p00.txt' | sha256sum -c -
-          echo 'fdc470e44ab0366177a12a1d0fc112b5695f07e5ba310352731e6579b025a53e  tools/v37_patch/p01.txt' | sha256sum -c -
-          echo '186e3e182ff61a1b772a997a5acd43a6ed30b843d364055d60ceb21903e39383  tools/v37_patch/p02.txt' | sha256sum -c -
-          echo 'f6c4a9910c754ef2cef6908aa002935f60cb4bd1efff3d17644eb758da95197a  tools/v37_patch/p03.txt' | sha256sum -c -
-          echo 'a7ba2c8e7e8021b9df9ff102fe754c03fcad8bcb13cb6cf37355f5a02e03965e  tools/v37_patch/p04.txt' | sha256sum -c -
-          echo '04cf05944a7dd237857f90308548429b08e3260c0a56d7d87d66b5713559d699  tools/v37_patch/p05.txt' | sha256sum -c -
-          echo 'b1465ce06b5509b7f2eb82338acaf20d4ceb043ddd8ac2ce614cb5615c7597c4  tools/v37_patch/p06.txt' | sha256sum -c -
-          echo 'b3e0b3efceb0021940b7035fbf6f5daf9ba52bb408f15c8c6212cec627c686a4  tools/v37_patch/p07.txt' | sha256sum -c -
-          echo '9a2e469836d00dcdf36ef35d7ad02ca5dc7b09ce9228c61d6f1e9c715abf7cb1  tools/v37_patch/p08.txt' | sha256sum -c -
-          echo '724451db04a3694a7ff657f54b4b836ff3a85546c52582c61d1ec7f25015d4ef  tools/v37_patch/p09.txt' | sha256sum -c -
-          cat tools/v37_patch/p00.txt tools/v37_patch/p01.txt tools/v37_patch/p02.txt tools/v37_patch/p03.txt tools/v37_patch/p04.txt tools/v37_patch/p05.txt tools/v37_patch/p06.txt tools/v37_patch/p07.txt tools/v37_patch/p08.txt tools/v37_patch/p09.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > /tmp/v37.patch.gz
-          echo 'c1b3d812e854c05709e4ab8f9ee8a246cae9f4beb52b20e95365874b5a67e88d  /tmp/v37.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v37.patch.gz > /tmp/v37.patch
-          echo '7f920fc6f13131f70985105f8028e142ae810bcd1a420c6c43d57052e84cf39a  /tmp/v37.patch' | sha256sum -c -
-          cd site
-          patch --batch index.html < /tmp/v37.patch
-          cd ..
-          echo 'ea5f9880fea874c92d8d3ce34abbad0cd870ca625b0152d3147f4b242283e8bd  site/index.html' | sha256sum -c -
-          grep -q 'V37 // MOBILE COMMAND UI' site/index.html
-          grep -q 'FIELD COMMAND' site/index.html
-          grep -q 'v37MobileDock' site/index.html
-          grep -q 'v37ThreatNote' site/index.html
-
-      - name: Freeze V37 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v37
-          cp site/index.html site/versions/v37/index.html
           echo 'ea5f9880fea874c92d8d3ce34abbad0cd870ca625b0152d3147f4b242283e8bd  site/versions/v37/index.html' | sha256sum -c -
+          cp site/versions/v37/index.html site/index.html
+
+      - name: Apply verified V37.1 mobile menu and safehouse fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '92b05fab4d192492b740dd4f636e02c970128868f7db0f149938af0e262f5fcf  tools/v371_patch/p00.txt' | sha256sum -c -
+          echo '40da8372f79989a802190036720f608d571b8b96a552ba378931b742e7d0fa1e  tools/v371_patch/p01.txt' | sha256sum -c -
+          cat tools/v371_patch/p00.txt tools/v371_patch/p01.txt | tr -d '[:space:]' | base64 --decode > /tmp/v371.patch.gz
+          echo '78bca4b783d83cd5543e4e272360cc823d7c0cb6bdd027dfe7c3767121784247  /tmp/v371.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v371.patch.gz > /tmp/v371.patch
+          echo 'e29f6c8d82011501df5cefc6c601025f83181d0bcfa590f0e38387025ce2e646  /tmp/v371.patch' | sha256sum -c -
+          cd site
+          patch --batch index.html < /tmp/v371.patch
+          cd ..
+          echo '9bb9602373678624b9e69251bd53923fd93f9ee48f1be15cdc546c291418b77f  site/index.html' | sha256sum -c -
+          grep -q 'V37.1 // MOBILE MENU + BASE FIX' site/index.html
+          grep -q 'PAUSED • MENU OPEN' site/index.html
+          grep -q 'v371DrawSafehouseCompound' site/index.html
+          grep -q '100dvh' site/index.html
+
+      - name: Freeze V37.1 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v37.1
+          cp site/index.html site/versions/v37.1/index.html
+          echo '9bb9602373678624b9e69251bd53923fd93f9ee48f1be15cdc546c291418b77f  site/versions/v37.1/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
