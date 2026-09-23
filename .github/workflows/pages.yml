@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V33
+name: Deploy Undead Afterdark V34
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v33
+  group: pages-v34
   cancel-in-progress: true
 
 jobs:
@@ -25,48 +25,48 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32
+          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v32/?release=${GITHUB_SHA}" -o site/versions/v32/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v33/?release=${GITHUB_SHA}" -o site/versions/v33/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
           echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
           echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/versions/v32/index.html' | sha256sum -c -
-          cp site/versions/v32/index.html site/index.html
-
-      - name: Apply verified V33 survivor classes
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '4100dd3df0f5e5d9da9e768c0b5a562e5b055060cd26814e21b483785dc5b12d  tools/v33_patch/c00.txt' | sha256sum -c -
-          echo 'f1735ce0e2e8500508ce325fb9a88c70e8651304f9156008590b764a8230b502  tools/v33_patch/c01.txt' | sha256sum -c -
-          echo 'bb4980b04876bc432c534a115c6f760d56c0826cff1da2f84bdb3cb6296f7739  tools/v33_patch/c02.txt' | sha256sum -c -
-          echo 'f7f08732892483fae0114cadc49e450fd86040979c060896fc30ff68b6e46ea6  tools/v33_patch/c03.txt' | sha256sum -c -
-          cat tools/v33_patch/c00.txt tools/v33_patch/c01.txt tools/v33_patch/c02.txt tools/v33_patch/c03.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > /tmp/v33.patch.gz
-          echo 'ca4023ac46861b9c911bdae20968a46fbd7015bd2d4f056c9dac5028a7739a39  /tmp/v33.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v33.patch.gz > /tmp/v33.patch
-          echo 'a51e624d92232ac5fc8b1b9fbc749d013f39d10ed92368e6078f00dc8eb123c3  /tmp/v33.patch' | sha256sum -c -
-          cd site
-          patch -p1 < /tmp/v33.patch
-          cd ..
-          echo 'd0f07c455a21b27dc74a232a783eca5703f56d9f8becc321a342f61f5fdc7063  site/index.html' | sha256sum -c -
-          grep -q 'V33 // SURVIVOR CLASSES' site/index.html
-          grep -q 'OVERDRIVE' site/index.html
-          grep -q 'FIELD HEAL' site/index.html
-          grep -q 'FORTIFY PULSE' site/index.html
-          grep -q 'ADRENALINE RUSH' site/index.html
-
-      - name: Freeze V33 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v33
-          cp site/index.html site/versions/v33/index.html
           echo 'd0f07c455a21b27dc74a232a783eca5703f56d9f8becc321a342f61f5fdc7063  site/versions/v33/index.html' | sha256sum -c -
+          cp site/versions/v33/index.html site/index.html
+
+      - name: Apply verified V34 Ashfall County expansion
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '828b3c827747873e12f13b571c854c5aed8f6cf67eee915fa732c207f2eb3308  tools/v34_patch/c00.txt' | sha256sum -c -
+          echo '8b147922f1b826c3c42f073100458d0b2948fe94ae3e4566c65015ec1779af88  tools/v34_patch/c01.txt' | sha256sum -c -
+          cat tools/v34_patch/c00.txt tools/v34_patch/c01.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode > /tmp/v34.patch.gz
+          echo '394117af3af6dc015a89437d7562d2d8c813b82cda46782891b26e732a976db9  /tmp/v34.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v34.patch.gz > /tmp/v34.patch
+          echo '9eeae380344bd9620d44d1b657ef78e3ffecc5ea92b3f53e0931f1bd61e9f545  /tmp/v34.patch' | sha256sum -c -
+          cd site
+          patch -p1 < /tmp/v34.patch
+          cd ..
+          echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/index.html' | sha256sum -c -
+          grep -q 'V34 // ASHFALL COUNTY EXPANSION' site/index.html
+          grep -q 'SEWER PUMP STATION' site/index.html
+          grep -q 'NATIONAL GUARD DEPOT' site/index.html
+          grep -q 'REGION DISCOVERED' site/index.html
+          grep -q 'ASHFALL MILITARY CHECKPOINT' site/index.html
+
+      - name: Freeze V34 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v34
+          cp site/index.html site/versions/v34/index.html
+          echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/versions/v34/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
