@@ -52,7 +52,7 @@ jobs:
           gzip -dc /tmp/v34.patch.gz > /tmp/v34.patch
           echo '9eeae380344bd9620d44d1b657ef78e3ffecc5ea92b3f53e0931f1bd61e9f545  /tmp/v34.patch' | sha256sum -c -
           cd site
-          patch -p1 < /tmp/v34.patch
+          patch index.html < /tmp/v34.patch
           cd ..
           echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/index.html' | sha256sum -c -
           grep -q 'V34 // ASHFALL COUNTY EXPANSION' site/index.html
