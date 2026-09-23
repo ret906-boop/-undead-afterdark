@@ -42,9 +42,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo '828b3c827747873e12f13b571c854c5aed8f6cf67eee915fa732c207f2eb3308  tools/v34_patch/c00.txt' | sha256sum -c -
+          echo '3e5ffc12f850df1fd030afa54f8cc693d7b066b82d0caa7206ae36e34774ace8  tools/v34_patch/c00a.txt' | sha256sum -c -
+          echo 'cd8d5cfaed77f6ed9eb6177d9f45799e612418311523bec92690bdcc6d757904  tools/v34_patch/c00b.txt' | sha256sum -c -
           echo '8b147922f1b826c3c42f073100458d0b2948fe94ae3e4566c65015ec1779af88  tools/v34_patch/c01.txt' | sha256sum -c -
-          cat tools/v34_patch/c00.txt tools/v34_patch/c01.txt \
+          cat tools/v34_patch/c00a.txt tools/v34_patch/c00b.txt tools/v34_patch/c01.txt \
             | tr -d '[:space:]' \
             | base64 --decode > /tmp/v34.patch.gz
           echo '394117af3af6dc015a89437d7562d2d8c813b82cda46782891b26e732a976db9  /tmp/v34.patch.gz' | sha256sum -c -
