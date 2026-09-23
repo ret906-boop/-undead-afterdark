@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V34
+name: Deploy Undead Afterdark V35
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v34
+  group: pages-v35
   cancel-in-progress: true
 
 jobs:
@@ -25,49 +25,53 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33
+          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v32/?release=${GITHUB_SHA}" -o site/versions/v32/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v33/?release=${GITHUB_SHA}" -o site/versions/v33/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v34/?release=${GITHUB_SHA}" -o site/versions/v34/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
           echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
           echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/versions/v32/index.html' | sha256sum -c -
           echo 'd0f07c455a21b27dc74a232a783eca5703f56d9f8becc321a342f61f5fdc7063  site/versions/v33/index.html' | sha256sum -c -
-          cp site/versions/v33/index.html site/index.html
-
-      - name: Apply verified V34 Ashfall County expansion
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '3e5ffc12f850df1fd030afa54f8cc693d7b066b82d0caa7206ae36e34774ace8  tools/v34_patch/c00a.txt' | sha256sum -c -
-          echo 'cd8d5cfaed77f6ed9eb6177d9f45799e612418311523bec92690bdcc6d757904  tools/v34_patch/c00b.txt' | sha256sum -c -
-          echo '8b147922f1b826c3c42f073100458d0b2948fe94ae3e4566c65015ec1779af88  tools/v34_patch/c01.txt' | sha256sum -c -
-          cat tools/v34_patch/c00a.txt tools/v34_patch/c00b.txt tools/v34_patch/c01.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > /tmp/v34.patch.gz
-          echo '394117af3af6dc015a89437d7562d2d8c813b82cda46782891b26e732a976db9  /tmp/v34.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v34.patch.gz > /tmp/v34.patch
-          echo '9eeae380344bd9620d44d1b657ef78e3ffecc5ea92b3f53e0931f1bd61e9f545  /tmp/v34.patch' | sha256sum -c -
-          cd site
-          patch index.html < /tmp/v34.patch
-          cd ..
-          echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/index.html' | sha256sum -c -
-          grep -q 'V34 // ASHFALL COUNTY EXPANSION' site/index.html
-          grep -q 'SEWER PUMP STATION' site/index.html
-          grep -q 'NATIONAL GUARD DEPOT' site/index.html
-          grep -q 'REGION DISCOVERED' site/index.html
-          grep -q 'ASHFALL MILITARY CHECKPOINT' site/index.html
-
-      - name: Freeze V34 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v34
-          cp site/index.html site/versions/v34/index.html
           echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/versions/v34/index.html' | sha256sum -c -
+          cp site/versions/v34/index.html site/index.html
+
+      - name: Apply verified V35 safehouse and base building overhaul
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '027301d7988e312d9e9c331b65356b3ee8de71a96871dc97f3fb272874c7a155  tools/v35_patch/c00.txt' | sha256sum -c -
+          echo 'adc29d4cfaade331b237332089f159713f0c49fcc6a79234765d9ae7be0bcf7b  tools/v35_patch/c01.txt' | sha256sum -c -
+          echo '81964e0b507ca6fbf20903bdfbe32cb9fa9dede12b710a88679d5017821c19d5  tools/v35_patch/c02.txt' | sha256sum -c -
+          echo 'b625a766c5a29d8d4f9305e9826e5683d72f995436ce37010140fb300308ba63  tools/v35_patch/c03.txt' | sha256sum -c -
+          echo 'daa3e15c7fc56b6d223edde90f1da5187c2fc269252a8055d2b6effa24dfedcf  tools/v35_patch/c04.txt' | sha256sum -c -
+          cat tools/v35_patch/c00.txt tools/v35_patch/c01.txt tools/v35_patch/c02.txt tools/v35_patch/c03.txt tools/v35_patch/c04.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode > /tmp/v35.patch.gz
+          echo 'bbac4d71d173c9aef77c1794b47a8438d33d2bdcbe18450a47b76427db354446  /tmp/v35.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v35.patch.gz > /tmp/v35.patch
+          echo 'c8fa28a7a177bdc300d65f83095eff5d837e3f107bcf0ae90960290caddb2d62  /tmp/v35.patch' | sha256sum -c -
+          cd site
+          patch index.html < /tmp/v35.patch
+          cd ..
+          echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/index.html' | sha256sum -c -
+          grep -q 'V35 // SAFEHOUSE + BASE BUILDING' site/index.html
+          grep -q 'SAFEHOUSE + BASE' site/index.html
+          grep -q 'BASE PARTS' site/index.html
+          grep -q 'SAFEHOUSE RAID' site/index.html
+          grep -q 'PERIMETER DEFENSE' site/index.html
+
+      - name: Freeze V35 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v35
+          cp site/index.html site/versions/v35/index.html
+          echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/versions/v35/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
