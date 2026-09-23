@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V31
+name: Deploy Undead Afterdark V32
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v31
+  group: pages-v32
   cancel-in-progress: true
 
 jobs:
@@ -25,41 +25,44 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3
+          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
           curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
+          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
           echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
           echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
-          cp site/versions/v30.3/index.html site/index.html
-
-      - name: Apply verified V31 loot and weapon overhaul
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo 'e8986daa4c7024d70d7d5889de49843f768abbace13f214a79af557b4abe8fd2  tools/v31_patch/c00.txt' | sha256sum -c -
-          echo 'f3febeb21fc745c4b1e3fa261164f16c8d5c879beafe4a70f3b59e93b4d2f286  tools/v31_patch/c01.txt' | sha256sum -c -
-          echo '1141455d37f1ce65c6c0e37d4982bb5bc711a93b82c96769947132277075cb07  tools/v31_patch/c02.txt' | sha256sum -c -
-          cat tools/v31_patch/c00.txt tools/v31_patch/c01.txt tools/v31_patch/c02.txt \
-            | tr -d '[:space:]' \
-            | base64 --decode > /tmp/v31.patch.gz
-          echo '590ce3419fbb4fd28bf121ea4bc9c90d6eb8105fdb3f59d926de0216c0947bb1  /tmp/v31.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v31.patch.gz > /tmp/v31.patch
-          echo '8cd37ec8254cc090a1af50e8fe6f145154b02a8f3b1ec74a2e5017e531527855  /tmp/v31.patch' | sha256sum -c -
-          cd site
-          patch -p1 < /tmp/v31.patch
-          cd ..
-          echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/index.html' | sha256sum -c -
-          grep -q 'V31 // LOOT + WEAPON INVENTORY OVERHAUL' site/index.html
-          grep -q 'WEAPON INVENTORY' site/index.html
-          grep -q 'LOOT WEAPON' site/index.html
-
-      - name: Freeze V31 rollback build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v31
-          cp site/index.html site/versions/v31/index.html
           echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
+          cp site/versions/v31/index.html site/index.html
+
+      - name: Apply verified V32 inventory and equipment overhaul
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '608a54b8b1c63394e5d9ee31a971a084088ee48f602846582264a3cac9dc4a0a  tools/v32_patch/c00.txt' | sha256sum -c -
+          echo 'eb259b58309e2723201fe77cf9905ed3205f3ef12f8697c9a63001550ca6374c  tools/v32_patch/c01.txt' | sha256sum -c -
+          echo 'f10e6bf02ffe9d3c624e2c9ed7af70b89cdffbc4720b656f3fdc6a09bb8e9253  tools/v32_patch/c02.txt' | sha256sum -c -
+          cat tools/v32_patch/c00.txt tools/v32_patch/c01.txt tools/v32_patch/c02.txt \
+            | tr -d '[:space:]' \
+            | base64 --decode > /tmp/v32.patch.gz
+          echo 'efb77fcf3654686bd2eff920062c054c4e282ac38f79c380b68ea2776b1dcc22  /tmp/v32.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v32.patch.gz > /tmp/v32.patch
+          echo 'fd5b845f1c3b617cd8f13a39a186b7a8bc9a3dd895e5f16e80e137b0aa07fe39  /tmp/v32.patch' | sha256sum -c -
+          cd site
+          patch -p1 < /tmp/v32.patch
+          cd ..
+          echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/index.html' | sha256sum -c -
+          grep -q 'V32 // INVENTORY + EQUIPMENT' site/index.html
+          grep -q 'EQUIPMENT // CARRIED SUPPLIES' site/index.html
+          grep -q 'FRAG GRENADE' site/index.html
+          grep -q 'v32Give' site/index.html
+
+      - name: Freeze V32 rollback build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v32
+          cp site/index.html site/versions/v32/index.html
+          echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/versions/v32/index.html' | sha256sum -c -
           touch site/.nojekyll
 
       - name: Configure Pages
