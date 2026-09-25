@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.1 Shooting Hotfix
+name: Deploy Undead Afterdark V37.10 Hosted Input Recovery
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v371
+  group: pages-v3710
   cancel-in-progress: true
 
 jobs:
@@ -65,41 +65,38 @@ jobs:
           grep -q 'v371DrawSafehouseCompound' site/index.html
           grep -q '100dvh' site/index.html
 
-      - name: Apply runtime and mobile shooting hotfix
+      - name: Apply V37.10 hosted input recovery
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('site/index.html')
-          s = p.read_text()
+          cat \
+            tools/v3710_patch/p00.txt \
+            tools/v3710_patch/p01.txt \
+            tools/v3710_patch/p02.txt \
+            tools/v3710_patch/p03a.txt \
+            tools/v3710_patch/p03b.txt \
+            tools/v3710_patch/p04.txt \
+            tools/v3710_patch/p05.txt \
+            | tr -d '[:space:]' > /tmp/v3710.b64
+          test "$(wc -c < /tmp/v3710.b64)" -eq 22404
+          base64 --decode /tmp/v3710.b64 > /tmp/v3710.patch.gz
+          echo 'e1e15b4e8ee24b0a408bed49f08795915285a6512cffb3eeb01ccaba876e92b8  /tmp/v3710.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v3710.patch.gz > /tmp/v3710.patch
+          echo 'e09e3f6348dd3e2e4c17599ac514b295075709d852f65d3b4878148baf88db87  /tmp/v3710.patch' | sha256sum -c -
+          cd site
+          patch --batch index.html < /tmp/v3710.patch
+          cd ..
+          echo '29a161d399e20ed29b16e3f25d87de7dc798dbea7f01bf2f114c721d7e410248  site/index.html' | sha256sum -c -
+          grep -q 'V37.10 // HOSTED INPUT RECOVERY' site/index.html
+          grep -q 'v3710-boot-guard' site/index.html
+          grep -q 'native-v3710' site/index.html
 
-          replacements = [
-              ("s===V35_SAFEHOUSES.guard?", "s?.short==='GUARD'?"),
-              ("s===V35_SAFEHOUSES.ranger?", "s?.short==='RANGER'?"),
-              ("const AIM_DEADZONE=9, FIRE_ON_RADIUS=52, FIRE_OFF_RADIUS=40;", "const AIM_DEADZONE=9;"),
-              ("if(state.fireHeld){if(l<FIRE_OFF_RADIUS)state.fireHeld=false}else if(l>FIRE_ON_RADIUS){state.fireHeld=true}", "if(fireTouchId!==null)state.fireHeld=true"),
-              ("fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=false;state.fireAim.active=false;state.manualAimHold=true", "fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=true;state.fireAim.active=false;state.manualAimHold=true"),
-          ]
-          for old, new in replacements:
-              count = s.count(old)
-              if count != 1:
-                  raise SystemExit(f'Expected exactly 1 match for {old!r}, found {count}')
-              s = s.replace(old, new, 1)
-          p.write_text(s)
-          PY
-          grep -q "s?.short==='GUARD'" site/index.html
-          grep -q "s?.short==='RANGER'" site/index.html
-          grep -q 'if(fireTouchId!==null)state.fireHeld=true' site/index.html
-          grep -q 'fireOriginY=t.clientY;state.fireHeld=true;state.fireAim.active=false' site/index.html
-          if grep -q 'FIRE_ON_RADIUS' site/index.html; then echo 'Old firing threshold still present' >&2; exit 1; fi
-
-      - name: Freeze shooting-hotfix build
+      - name: Freeze V37.10 build
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v37.1-shootfix
-          cp site/index.html site/versions/v37.1-shootfix/index.html
+          mkdir -p site/versions/v37.10
+          cp site/index.html site/versions/v37.10/index.html
           sha256sum site/index.html
           touch site/.nojekyll
 
