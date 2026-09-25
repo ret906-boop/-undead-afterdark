@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.1
+name: Deploy Undead Afterdark V37.1 Shooting Hotfix
 
 on:
   push:
@@ -46,7 +46,7 @@ jobs:
           echo 'ea5f9880fea874c92d8d3ce34abbad0cd870ca625b0152d3147f4b242283e8bd  site/versions/v37/index.html' | sha256sum -c -
           cp site/versions/v37/index.html site/index.html
 
-      - name: Apply verified V37.1 mobile menu and safehouse fix
+      - name: Apply verified V37.1 mobile menu and base patch
         shell: bash
         run: |
           set -euo pipefail
@@ -65,13 +65,42 @@ jobs:
           grep -q 'v371DrawSafehouseCompound' site/index.html
           grep -q '100dvh' site/index.html
 
-      - name: Freeze V37.1 rollback build
+      - name: Apply runtime and mobile shooting hotfix
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v37.1
-          cp site/index.html site/versions/v37.1/index.html
-          echo '9bb9602373678624b9e69251bd53923fd93f9ee48f1be15cdc546c291418b77f  site/versions/v37.1/index.html' | sha256sum -c -
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('site/index.html')
+          s = p.read_text()
+
+          replacements = [
+              ("s===V35_SAFEHOUSES.guard?", "s?.short==='GUARD'?"),
+              ("s===V35_SAFEHOUSES.ranger?", "s?.short==='RANGER'?"),
+              ("const AIM_DEADZONE=9, FIRE_ON_RADIUS=52, FIRE_OFF_RADIUS=40;", "const AIM_DEADZONE=9;"),
+              ("if(state.fireHeld){if(l<FIRE_OFF_RADIUS)state.fireHeld=false}else if(l>FIRE_ON_RADIUS){state.fireHeld=true}", "if(fireTouchId!==null)state.fireHeld=true"),
+              ("fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=false;state.fireAim.active=false;state.manualAimHold=true", "fireOriginX=t.clientX;fireOriginY=t.clientY;state.fireHeld=true;state.fireAim.active=false;state.manualAimHold=true"),
+          ]
+          for old, new in replacements:
+              count = s.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly 1 match for {old!r}, found {count}')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+          grep -q "s?.short==='GUARD'" site/index.html
+          grep -q "s?.short==='RANGER'" site/index.html
+          grep -q 'if(fireTouchId!==null)state.fireHeld=true' site/index.html
+          grep -q 'fireOriginY=t.clientY;state.fireHeld=true;state.fireAim.active=false' site/index.html
+          if grep -q 'FIRE_ON_RADIUS' site/index.html; then echo 'Old firing threshold still present' >&2; exit 1; fi
+
+      - name: Freeze shooting-hotfix build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v37.1-shootfix
+          cp site/index.html site/versions/v37.1-shootfix/index.html
+          sha256sum site/index.html
           touch site/.nojekyll
 
       - name: Configure Pages
