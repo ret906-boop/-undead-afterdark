@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.10 Hosted Input Recovery
+name: Deploy Undead Afterdark V37.11 Co-op Connection Upgrade
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v3710
+  group: pages-v3711
   cancel-in-progress: true
 
 jobs:
@@ -97,6 +97,32 @@ jobs:
           set -euo pipefail
           mkdir -p site/versions/v37.10
           cp site/index.html site/versions/v37.10/index.html
+
+      - name: Apply V37.11 co-op connection upgrade
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat tools/v3711_patch/p00.txt tools/v3711_patch/p01.txt | tr -d '[:space:]' > /tmp/v3711.b64
+          test "$(wc -c < /tmp/v3711.b64)" -eq 8236
+          base64 --decode /tmp/v3711.b64 > /tmp/v3711.patch.gz
+          echo 'cd76b04ea50a3f30d9b25088bcf850fa40181dbae89eeafdf4788e446e84c4fe  /tmp/v3711.patch.gz' | sha256sum -c -
+          gzip -dc /tmp/v3711.patch.gz > /tmp/v3711.patch
+          echo 'e15317bd291dc3b2ac94104aae503b195a9108d638a5937b918ee60fabff1874  /tmp/v3711.patch' | sha256sum -c -
+          cd site
+          patch --batch index.html < /tmp/v3711.patch
+          cd ..
+          echo 'c9c4c05fbbf59b403673b0f0f980d00d267d7495988218f65b91304937760a81  site/index.html' | sha256sum -c -
+          grep -q 'V37.11 // CO-OP CONNECTION UPGRADE' site/index.html
+          grep -q 'stun:stun.cloudflare.com:3478' site/index.html
+          grep -q 'RECONNECTING • ATTEMPT' site/index.html
+          grep -q 'setInterval(networkTick,50)' site/index.html
+
+      - name: Freeze V37.11 build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v37.11
+          cp site/index.html site/versions/v37.11/index.html
           sha256sum site/index.html
           touch site/.nojekyll
 
