@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.15 Physical Safehouse Defense
+name: Deploy Undead Afterdark V37.16 Solid Safehouse
 
 on:
   push:
@@ -21,47 +21,41 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore published builds through V37.14
+      - name: Restore published builds through V37.15
         shell: bash
         run: |
           set -euo pipefail
-          versions=(v30.2 v30.3 v31 v32 v33 v34 v35 v36 v37 v37.10 v37.11 v37.12 v37.13 v37.14)
+          versions=(v30.2 v30.3 v31 v32 v33 v34 v35 v36 v37 v37.10 v37.11 v37.12 v37.13 v37.14 v37.15)
           for v in "${versions[@]}"; do
             mkdir -p "site/versions/$v"
             curl --fail --location --retry 5 \
               "https://ret906-boop.github.io/-undead-afterdark/versions/$v/?release=${GITHUB_SHA}" \
               -o "site/versions/$v/index.html"
           done
-          cp site/versions/v37.14/index.html site/index.html
-          grep -q 'V37.14 // INVENTORY CLOSE FIX' site/index.html
-
-      - name: Apply V37.15 physical safehouse defense
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 tools/v3715_patch.py site/index.html
+          cp site/versions/v37.15/index.html site/index.html
           grep -q 'V37.15 // PHYSICAL SAFEHOUSE DEFENSE' site/index.html
-          grep -q 'v3715BasePart' site/index.html
-          grep -q 'v3715MountBaseDefenses' site/index.html
-          grep -q 'window.__v3715RaidTarget' site/index.html
-          ! grep -q 'Math.hypot(z.x-bp.x,z.y-bp.y)<185+z.r' site/index.html
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          h=Path('site/index.html').read_text()
-          scripts=re.findall(r'<script[^>]*>(.*?)</script>',h,re.S)
-          for i,s in enumerate(scripts): Path(f'/tmp/v3715-script-{i}.js').write_text(s)
-          PY
-          for f in /tmp/v3715-script-*.js; do node --check "$f"; done
 
-      - name: Freeze V37.15 build
+      - name: Apply V37.16 solid safehouse
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v37.15
-          cp site/index.html site/versions/v37.15/index.html
+          python3 tools/v3716_patch.py site/index.html
+          grep -q 'V37.16 // SOLID INTEGRATED SAFEHOUSE' site/index.html
+          grep -q '__v3716IntegratedSafehouse' site/index.html
+          grep -q "k==='gate'&&!state.v35RaidActive" site/index.html
+          grep -q "freshBrokenSave" site/index.html
+          grep -q "d.dead||d.v3715BasePart" site/index.html
+          grep -q "v3715MountBaseDefenses()}v35UpdateHUD" site/index.html
+          for f in /tmp/v3716-script-*.js; do node --check "$f"; done
+
+      - name: Freeze V37.16 build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v37.16
+          cp site/index.html site/versions/v37.16/index.html
           touch site/.nojekyll
-          sha256sum site/index.html site/versions/v37.15/index.html
+          sha256sum site/index.html site/versions/v37.16/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
