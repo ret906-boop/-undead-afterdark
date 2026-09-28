@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.11 Co-op Connection Upgrade
+name: Deploy Undead Afterdark V37.13 Weapon + Perk Fix
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v3711
+  group: pages-v3713
   cancel-in-progress: true
 
 jobs:
@@ -21,159 +21,85 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore verified rollback builds
+      - name: Restore published builds through V37.12
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v30.2 site/versions/v30.3 site/versions/v31 site/versions/v32 site/versions/v33 site/versions/v34 site/versions/v35 site/versions/v36 site/versions/v37
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.2/?release=${GITHUB_SHA}" -o site/versions/v30.2/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v30.3/?release=${GITHUB_SHA}" -o site/versions/v30.3/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v31/?release=${GITHUB_SHA}" -o site/versions/v31/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v32/?release=${GITHUB_SHA}" -o site/versions/v32/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v33/?release=${GITHUB_SHA}" -o site/versions/v33/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v34/?release=${GITHUB_SHA}" -o site/versions/v34/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v35/?release=${GITHUB_SHA}" -o site/versions/v35/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v36/?release=${GITHUB_SHA}" -o site/versions/v36/index.html
-          curl --fail --location --retry 5 "https://ret906-boop.github.io/-undead-afterdark/versions/v37/?release=${GITHUB_SHA}" -o site/versions/v37/index.html
-          echo '420979892d942d2af254b42569fac62adaf5740a0981a89465220b0081888690  site/versions/v30.2/index.html' | sha256sum -c -
-          echo '733713cfd49d19f6cf3fc21e469e29b7cf6fd393612934df51dc8a35bbb62906  site/versions/v30.3/index.html' | sha256sum -c -
-          echo 'c5a62f81a24c7fba78ab99ef9e36dbe1371dfc78a2936ca3b59794b3a29a2fb6  site/versions/v31/index.html' | sha256sum -c -
-          echo 'f97a4f79d4495416bccaa80a0f38605a6f4925091ef9a42fe8e25365580bd46c  site/versions/v32/index.html' | sha256sum -c -
-          echo 'd0f07c455a21b27dc74a232a783eca5703f56d9f8becc321a342f61f5fdc7063  site/versions/v33/index.html' | sha256sum -c -
-          echo '6c8bb9116f85d50588a41443f60a94dfb25c9e260bdd4103c7ee4602fcab3fbd  site/versions/v34/index.html' | sha256sum -c -
-          echo '8bfce44c17f84dca5f4f18df387330f7f99a9a4ed25d04f9f7b8433af5a41367  site/versions/v35/index.html' | sha256sum -c -
-          echo '823e58ddaec95de19e59e11ff8750f515af0e2ade61cfe8a4d8f6182f1bb0acf  site/versions/v36/index.html' | sha256sum -c -
-          echo 'ea5f9880fea874c92d8d3ce34abbad0cd870ca625b0152d3147f4b242283e8bd  site/versions/v37/index.html' | sha256sum -c -
-          cp site/versions/v37/index.html site/index.html
+          versions=(v30.2 v30.3 v31 v32 v33 v34 v35 v36 v37 v37.10 v37.11 v37.12)
+          for v in "${versions[@]}"; do
+            mkdir -p "site/versions/$v"
+            curl --fail --location --retry 5 \
+              "https://ret906-boop.github.io/-undead-afterdark/versions/$v/?release=${GITHUB_SHA}" \
+              -o "site/versions/$v/index.html"
+          done
+          cp site/versions/v37.12/index.html site/index.html
+          grep -q 'V37.12 // ANALOG MOVEMENT FIX' site/index.html
 
-      - name: Apply verified V37.1 mobile menu and base patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo '92b05fab4d192492b740dd4f636e02c970128868f7db0f149938af0e262f5fcf  tools/v371_patch/p00.txt' | sha256sum -c -
-          echo '40da8372f79989a802190036720f608d571b8b96a552ba378931b742e7d0fa1e  tools/v371_patch/p01.txt' | sha256sum -c -
-          cat tools/v371_patch/p00.txt tools/v371_patch/p01.txt | tr -d '[:space:]' | base64 --decode > /tmp/v371.patch.gz
-          echo '78bca4b783d83cd5543e4e272360cc823d7c0cb6bdd027dfe7c3767121784247  /tmp/v371.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v371.patch.gz > /tmp/v371.patch
-          echo 'e29f6c8d82011501df5cefc6c601025f83181d0bcfa590f0e38387025ce2e646  /tmp/v371.patch' | sha256sum -c -
-          cd site
-          patch --batch index.html < /tmp/v371.patch
-          cd ..
-          echo '9bb9602373678624b9e69251bd53923fd93f9ee48f1be15cdc546c291418b77f  site/index.html' | sha256sum -c -
-          grep -q 'V37.1 // MOBILE MENU + BASE FIX' site/index.html
-          grep -q 'PAUSED • MENU OPEN' site/index.html
-          grep -q 'v371DrawSafehouseCompound' site/index.html
-          grep -q '100dvh' site/index.html
-
-      - name: Apply V37.10 hosted input recovery
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat \
-            tools/v3710_patch/p00.txt \
-            tools/v3710_patch/p01.txt \
-            tools/v3710_patch/p02.txt \
-            tools/v3710_patch/p03a.txt \
-            tools/v3710_patch/p03b.txt \
-            tools/v3710_patch/p04.txt \
-            tools/v3710_patch/p05.txt \
-            | tr -d '[:space:]' > /tmp/v3710.b64
-          test "$(wc -c < /tmp/v3710.b64)" -eq 22404
-          base64 --decode /tmp/v3710.b64 > /tmp/v3710.patch.gz
-          echo 'e1e15b4e8ee24b0a408bed49f08795915285a6512cffb3eeb01ccaba876e92b8  /tmp/v3710.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v3710.patch.gz > /tmp/v3710.patch
-          echo 'e09e3f6348dd3e2e4c17599ac514b295075709d852f65d3b4878148baf88db87  /tmp/v3710.patch' | sha256sum -c -
-          cd site
-          patch --batch index.html < /tmp/v3710.patch
-          cd ..
-          echo '29a161d399e20ed29b16e3f25d87de7dc798dbea7f01bf2f114c721d7e410248  site/index.html' | sha256sum -c -
-          grep -q 'V37.10 // HOSTED INPUT RECOVERY' site/index.html
-          grep -q 'v3710-boot-guard' site/index.html
-          grep -q 'native-v3710' site/index.html
-
-      - name: Freeze V37.10 build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v37.10
-          cp site/index.html site/versions/v37.10/index.html
-
-      - name: Apply V37.11 co-op connection upgrade
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat tools/v3711_patch/p00.txt tools/v3711_patch/p01.txt | tr -d '[:space:]' > /tmp/v3711.b64
-          test "$(wc -c < /tmp/v3711.b64)" -eq 8236
-          base64 --decode /tmp/v3711.b64 > /tmp/v3711.patch.gz
-          echo 'cd76b04ea50a3f30d9b25088bcf850fa40181dbae89eeafdf4788e446e84c4fe  /tmp/v3711.patch.gz' | sha256sum -c -
-          gzip -dc /tmp/v3711.patch.gz > /tmp/v3711.patch
-          echo 'e15317bd291dc3b2ac94104aae503b195a9108d638a5937b918ee60fabff1874  /tmp/v3711.patch' | sha256sum -c -
-          cd site
-          patch --batch index.html < /tmp/v3711.patch
-          cd ..
-          echo 'c9c4c05fbbf59b403673b0f0f980d00d267d7495988218f65b91304937760a81  site/index.html' | sha256sum -c -
-          grep -q 'V37.11 // CO-OP CONNECTION UPGRADE' site/index.html
-          grep -q 'stun:stun.cloudflare.com:3478' site/index.html
-          grep -q 'RECONNECTING • ATTEMPT' site/index.html
-          grep -q 'setInterval(networkTick,50)' site/index.html
-
-      - name: Freeze V37.11 build
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p site/versions/v37.11
-          cp site/index.html site/versions/v37.11/index.html
-
-      - name: Apply V37.12 analog movement fix
+      - name: Apply V37.13 weapon and perk input fix
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           p = Path('site/index.html')
           h = p.read_text()
 
           replacements = [
               (
-                  "function updateMove(e){const p=pointFor(movePad,e);state.joy={x:p.x,y:p.y,active:true};moveKnob.style.transform=`translate(${p.px}px,${p.py}px)`}",
-                  "function updateMove(e){const p=pointFor(movePad,e),l=Math.hypot(p.x,p.y),dz=.12,s=l<=dz?0:Math.min(1,(l-dz)/(1-dz)),k=l?s/l:0;state.joy={x:p.x*k,y:p.y*k,active:true};moveKnob.style.transform=`translate(${p.px}px,${p.py}px)`}"
+                  "if(net.mode!=='host'||!state.inShop)return false;const choice=currentPerks.find(p=>p[0]===key);",
+                  "if((net.mode!=='host'&&net.mode!=='single')||!state.inShop)return false;const choice=currentPerks.find(p=>p[0]===key);"
               ),
               (
-                  "let mx=inp.mx,my=inp.my,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;mx/=l;my/=l;player.moveMag=raw;",
-                  "let mx=inp.mx,my=inp.my,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;if(l>1){mx/=l;my/=l}player.moveMag=raw;"
+                  "#v37MobileStats{position:absolute;right:max(8px,calc(env(safe-area-inset-right) + 6px));top:max(7px,calc(env(safe-area-inset-top) + 5px));z-index:18;min-width:124px;max-width:156px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:11px;background:rgba(8,11,13,.80);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 7px 22px rgba(0,0,0,.30);pointer-events:none;text-align:right}",
+                  "#v37MobileStats{position:absolute;right:max(8px,calc(env(safe-area-inset-right) + 6px));top:max(7px,calc(env(safe-area-inset-top) + 5px));z-index:18;min-width:124px;max-width:156px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:11px;background:rgba(8,11,13,.80);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 7px 22px rgba(0,0,0,.30);pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;text-align:right}"
               ),
               (
-                  "if(p.downed){p.moveMag=0;continue}let mx=Number(inp.mx)||0,my=Number(inp.my)||0,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;mx/=l;my/=l;p.moveMag=raw;",
-                  "if(p.downed){p.moveMag=0;continue}let mx=Number(inp.mx)||0,my=Number(inp.my)||0,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;if(l>1){mx/=l;my/=l}p.moveMag=raw;"
+                  "const v37stats=document.createElement('div');v37stats.id='v37MobileStats';v37stats.innerHTML='<b>SIDEARM • 0/0</b><small>$0 • 0 KILLS</small>';v37wrap.appendChild(v37stats);",
+                  "const v37stats=document.createElement('div');v37stats.id='v37MobileStats';v37stats.innerHTML='<b>SIDEARM • 0/0</b><small>$0 • 0 KILLS</small>';v37stats.title='Tap to switch weapon';v37wrap.appendChild(v37stats);v37stats.addEventListener('pointerdown',e=>{if(!state.running||state.inShop||state.paused)return;const slots=(state.owned||[]).filter(w=>weapons[w]).slice(0,2);if(slots.length<2)return;e.preventDefault();e.stopPropagation();const i=slots.indexOf(player.weapon),next=slots[(i<0?0:i+1)%slots.length];v31EquipSlot(next);v37UpdateMobileUI()},{passive:false});"
               ),
               (
-                  "const ml=Math.hypot(mx,my)||1; mx/=ml; my/=ml;",
-                  "const ml=Math.hypot(mx,my)||1; if(ml>1){mx/=ml;my/=ml}"
+                  "document.title='Undead Afterdark V37.11 Co-op Connection Upgrade';",
+                  "document.title='Undead Afterdark V37.13 Weapon + Perk Fix';"
+              ),
+              (
+                  "if(mv) mv.textContent='V37.11 // CO-OP CONNECTION UPGRADE';",
+                  "if(mv) mv.textContent='V37.13 // WEAPON + PERK FIX';"
               ),
           ]
 
           for old, new in replacements:
               count = h.count(old)
               if count != 1:
-                  raise RuntimeError(f'Expected exactly one movement target, found {count}: {old[:80]}')
+                  raise RuntimeError(f'Expected exactly one V37.13 target, found {count}: {old[:90]}')
               h = h.replace(old, new, 1)
 
-          h = h.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n<!-- V37.12 // ANALOG MOVEMENT FIX -->', 1)
+          marker = '<!-- V37.12 // ANALOG MOVEMENT FIX -->'
+          if h.count(marker) != 1:
+              raise RuntimeError('V37.12 marker missing or duplicated')
+          h = h.replace(marker, marker + '\n<!-- V37.13 // WEAPON + PERK INPUT FIX -->', 1)
           p.write_text(h)
-          PY
-          grep -q 'V37.12 // ANALOG MOVEMENT FIX' site/index.html
-          grep -q 'dz=.12' site/index.html
-          grep -q 'if(l>1){mx/=l;my/=l}player.moveMag=raw' site/index.html
 
-      - name: Freeze V37.12 build
+          scripts = re.findall(r'<script[^>]*>(.*?)</script>', h, re.S)
+          for i, script in enumerate(scripts, 1):
+              Path(f'/tmp/v3713-script-{i}.js').write_text(script)
+          PY
+
+          grep -q 'V37.13 // WEAPON + PERK INPUT FIX' site/index.html
+          grep -q "net.mode!=='host'&&net.mode!=='single'" site/index.html
+          grep -q 'Tap to switch weapon' site/index.html
+          grep -q 'V37.13 // WEAPON + PERK FIX' site/index.html
+          for f in /tmp/v3713-script-*.js; do node --check "$f"; done
+
+      - name: Freeze V37.13 build
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v37.12
-          cp site/index.html site/versions/v37.12/index.html
-          sha256sum site/index.html
+          mkdir -p site/versions/v37.13
+          cp site/index.html site/versions/v37.13/index.html
           touch site/.nojekyll
+          sha256sum site/index.html site/versions/v37.13/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
