@@ -1,4 +1,4 @@
-name: Deploy Undead Afterdark V37.13 Weapon + Perk Fix
+name: Deploy Undead Afterdark V37.14 Inventory Close Fix
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages-v3713
+  group: pages-v3714
   cancel-in-progress: true
 
 jobs:
@@ -21,21 +21,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore published builds through V37.12
+      - name: Restore published builds through V37.13
         shell: bash
         run: |
           set -euo pipefail
-          versions=(v30.2 v30.3 v31 v32 v33 v34 v35 v36 v37 v37.10 v37.11 v37.12)
+          versions=(v30.2 v30.3 v31 v32 v33 v34 v35 v36 v37 v37.10 v37.11 v37.12 v37.13)
           for v in "${versions[@]}"; do
             mkdir -p "site/versions/$v"
             curl --fail --location --retry 5 \
               "https://ret906-boop.github.io/-undead-afterdark/versions/$v/?release=${GITHUB_SHA}" \
               -o "site/versions/$v/index.html"
           done
-          cp site/versions/v37.12/index.html site/index.html
-          grep -q 'V37.12 // ANALOG MOVEMENT FIX' site/index.html
+          cp site/versions/v37.13/index.html site/index.html
+          grep -q 'V37.13 // WEAPON + PERK INPUT FIX' site/index.html
 
-      - name: Apply V37.13 weapon and perk input fix
+      - name: Apply V37.14 inventory close fix
         shell: bash
         run: |
           set -euo pipefail
@@ -46,60 +46,78 @@ jobs:
           p = Path('site/index.html')
           h = p.read_text()
 
-          replacements = [
-              (
-                  "if(net.mode!=='host'||!state.inShop)return false;const choice=currentPerks.find(p=>p[0]===key);",
-                  "if((net.mode!=='host'&&net.mode!=='single')||!state.inShop)return false;const choice=currentPerks.find(p=>p[0]===key);"
-              ),
-              (
-                  "#v37MobileStats{position:absolute;right:max(8px,calc(env(safe-area-inset-right) + 6px));top:max(7px,calc(env(safe-area-inset-top) + 5px));z-index:18;min-width:124px;max-width:156px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:11px;background:rgba(8,11,13,.80);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 7px 22px rgba(0,0,0,.30);pointer-events:none;text-align:right}",
-                  "#v37MobileStats{position:absolute;right:max(8px,calc(env(safe-area-inset-right) + 6px));top:max(7px,calc(env(safe-area-inset-top) + 5px));z-index:18;min-width:124px;max-width:156px;padding:6px 8px;border:1px solid rgba(255,255,255,.11);border-radius:11px;background:rgba(8,11,13,.80);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 7px 22px rgba(0,0,0,.30);pointer-events:auto;touch-action:manipulation;-webkit-user-select:none;user-select:none;text-align:right}"
-              ),
-              (
-                  "const v37stats=document.createElement('div');v37stats.id='v37MobileStats';v37stats.innerHTML='<b>SIDEARM • 0/0</b><small>$0 • 0 KILLS</small>';v37wrap.appendChild(v37stats);",
-                  "const v37stats=document.createElement('div');v37stats.id='v37MobileStats';v37stats.innerHTML='<b>SIDEARM • 0/0</b><small>$0 • 0 KILLS</small>';v37stats.title='Tap to switch weapon';v37wrap.appendChild(v37stats);v37stats.addEventListener('pointerdown',e=>{if(!state.running||state.inShop||state.paused)return;const slots=(state.owned||[]).filter(w=>weapons[w]).slice(0,2);if(slots.length<2)return;e.preventDefault();e.stopPropagation();const i=slots.indexOf(player.weapon),next=slots[(i<0?0:i+1)%slots.length];v31EquipSlot(next);v37UpdateMobileUI()},{passive:false});"
-              ),
-              (
-                  "document.title='Undead Afterdark V37.11 Co-op Connection Upgrade';",
-                  "document.title='Undead Afterdark V37.13 Weapon + Perk Fix';"
-              ),
-              (
-                  "if(mv) mv.textContent='V37.11 // CO-OP CONNECTION UPGRADE';",
-                  "if(mv) mv.textContent='V37.13 // WEAPON + PERK FIX';"
-              ),
-          ]
-
-          for old, new in replacements:
-              count = h.count(old)
-              if count != 1:
-                  raise RuntimeError(f'Expected exactly one V37.13 target, found {count}: {old[:90]}')
-              h = h.replace(old, new, 1)
-
-          marker = '<!-- V37.12 // ANALOG MOVEMENT FIX -->'
+          marker = '<!-- V37.13 // WEAPON + PERK INPUT FIX -->'
           if h.count(marker) != 1:
-              raise RuntimeError('V37.12 marker missing or duplicated')
-          h = h.replace(marker, marker + '\n<!-- V37.13 // WEAPON + PERK INPUT FIX -->', 1)
+              raise RuntimeError('V37.13 marker missing or duplicated')
+          h = h.replace(marker, marker + '\n<!-- V37.14 // INVENTORY CLOSE FIX -->', 1)
+
+          patch = r'''
+          <script id="v3714-inventory-close-fix">
+          (()=>{
+            document.title='Undead Afterdark V37.14 Inventory Close Fix';
+            const mv=document.querySelector('.menuVersion');if(mv)mv.textContent='V37.14 // INVENTORY CLOSE FIX';
+            const overlay=document.getElementById('v31InventoryOverlay');
+            const closeBtn=document.getElementById('v31InvClose');
+            const inventoryBtn=document.getElementById('v31InventoryBtn');
+            if(!overlay||!closeBtn||!inventoryBtn)return;
+
+            closeBtn.style.touchAction='manipulation';
+            closeBtn.style.minWidth='88px';
+            closeBtn.style.minHeight='48px';
+            closeBtn.style.position='relative';
+            closeBtn.style.zIndex='20';
+
+            const isOpen=()=>getComputedStyle(overlay).display!=='none';
+            const closeInventory=e=>{
+              if(e){e.preventDefault();e.stopPropagation()}
+              overlay.style.display='none';
+              if(typeof state!=='undefined'&&state.joy){state.joy.x=0;state.joy.y=0;state.joy.active=false}
+            };
+
+            closeBtn.addEventListener('pointerdown',closeInventory,{passive:false});
+            closeBtn.addEventListener('click',closeInventory,{passive:false});
+
+            const oldInventoryClick=inventoryBtn.onclick;
+            inventoryBtn.onclick=e=>{
+              if(isOpen()){closeInventory(e);return}
+              if(typeof oldInventoryClick==='function')oldInventoryClick.call(inventoryBtn,e);
+            };
+
+            addEventListener('keydown',e=>{
+              if(!isOpen())return;
+              if(e.key==='Escape'||e.key==='i'||e.key==='I'){
+                e.preventDefault();
+                closeInventory(e);
+              }
+            });
+          })();
+          </script>
+          '''
+
+          if h.count('</body>') != 1:
+              raise RuntimeError('Expected one closing body tag')
+          h = h.replace('</body>', patch + '\n</body>', 1)
           p.write_text(h)
 
           scripts = re.findall(r'<script[^>]*>(.*?)</script>', h, re.S)
           for i, script in enumerate(scripts, 1):
-              Path(f'/tmp/v3713-script-{i}.js').write_text(script)
+              Path(f'/tmp/v3714-script-{i}.js').write_text(script)
           PY
 
-          grep -q 'V37.13 // WEAPON + PERK INPUT FIX' site/index.html
-          grep -q "net.mode!=='host'&&net.mode!=='single'" site/index.html
-          grep -q 'Tap to switch weapon' site/index.html
-          grep -q 'V37.13 // WEAPON + PERK FIX' site/index.html
-          for f in /tmp/v3713-script-*.js; do node --check "$f"; done
+          grep -q 'V37.14 // INVENTORY CLOSE FIX' site/index.html
+          grep -q 'v3714-inventory-close-fix' site/index.html
+          grep -q "closeBtn.addEventListener('pointerdown'" site/index.html
+          grep -q "if(isOpen()){closeInventory(e);return}" site/index.html
+          for f in /tmp/v3714-script-*.js; do node --check "$f"; done
 
-      - name: Freeze V37.13 build
+      - name: Freeze V37.14 build
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p site/versions/v37.13
-          cp site/index.html site/versions/v37.13/index.html
+          mkdir -p site/versions/v37.14
+          cp site/index.html site/versions/v37.14/index.html
           touch site/.nojekyll
-          sha256sum site/index.html site/versions/v37.13/index.html
+          sha256sum site/index.html site/versions/v37.14/index.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
