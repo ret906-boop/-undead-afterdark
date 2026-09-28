@@ -123,6 +123,55 @@ jobs:
           set -euo pipefail
           mkdir -p site/versions/v37.11
           cp site/index.html site/versions/v37.11/index.html
+
+      - name: Apply V37.12 analog movement fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('site/index.html')
+          h = p.read_text()
+
+          replacements = [
+              (
+                  "function updateMove(e){const p=pointFor(movePad,e);state.joy={x:p.x,y:p.y,active:true};moveKnob.style.transform=`translate(${p.px}px,${p.py}px)`}",
+                  "function updateMove(e){const p=pointFor(movePad,e),l=Math.hypot(p.x,p.y),dz=.12,s=l<=dz?0:Math.min(1,(l-dz)/(1-dz)),k=l?s/l:0;state.joy={x:p.x*k,y:p.y*k,active:true};moveKnob.style.transform=`translate(${p.px}px,${p.py}px)`}"
+              ),
+              (
+                  "let mx=inp.mx,my=inp.my,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;mx/=l;my/=l;player.moveMag=raw;",
+                  "let mx=inp.mx,my=inp.my,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;if(l>1){mx/=l;my/=l}player.moveMag=raw;"
+              ),
+              (
+                  "if(p.downed){p.moveMag=0;continue}let mx=Number(inp.mx)||0,my=Number(inp.my)||0,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;mx/=l;my/=l;p.moveMag=raw;",
+                  "if(p.downed){p.moveMag=0;continue}let mx=Number(inp.mx)||0,my=Number(inp.my)||0,raw=Math.min(1,Math.hypot(mx,my)),l=Math.hypot(mx,my)||1;if(l>1){mx/=l;my/=l}p.moveMag=raw;"
+              ),
+              (
+                  "const ml=Math.hypot(mx,my)||1; mx/=ml; my/=ml;",
+                  "const ml=Math.hypot(mx,my)||1; if(ml>1){mx/=ml;my/=ml}"
+              ),
+          ]
+
+          for old, new in replacements:
+              count = h.count(old)
+              if count != 1:
+                  raise RuntimeError(f'Expected exactly one movement target, found {count}: {old[:80]}')
+              h = h.replace(old, new, 1)
+
+          h = h.replace('<!doctype html>', '<!doctype html>\n<!-- V37.12 // ANALOG MOVEMENT FIX -->', 1)
+          p.write_text(h)
+          PY
+          grep -q 'V37.12 // ANALOG MOVEMENT FIX' site/index.html
+          grep -q 'dz=.12' site/index.html
+          grep -q 'if(l>1){mx/=l;my/=l}player.moveMag=raw' site/index.html
+
+      - name: Freeze V37.12 build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/versions/v37.12
+          cp site/index.html site/versions/v37.12/index.html
           sha256sum site/index.html
           touch site/.nojekyll
 
