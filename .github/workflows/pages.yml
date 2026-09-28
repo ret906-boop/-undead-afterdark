@@ -159,7 +159,7 @@ jobs:
                   raise RuntimeError(f'Expected exactly one movement target, found {count}: {old[:80]}')
               h = h.replace(old, new, 1)
 
-          h = h.replace('<!doctype html>', '<!doctype html>\n<!-- V37.12 // ANALOG MOVEMENT FIX -->', 1)
+          h = h.replace('<!DOCTYPE html>', '<!DOCTYPE html>\n<!-- V37.12 // ANALOG MOVEMENT FIX -->', 1)
           p.write_text(h)
           PY
           grep -q 'V37.12 // ANALOG MOVEMENT FIX' site/index.html
